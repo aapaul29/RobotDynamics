@@ -1,0 +1,639 @@
+% =====================================================================
+%  Robot Dynamics (151-0851-00L, HS26) -- MATLAB Cheatsheet
+%  ETH-style cheatsheet layout: A4 landscape, multi-column, compact
+% =====================================================================
+\documentclass[8pt,landscape]{extarticle}
+
+% ---------- Page & fonts ----------
+\usepackage[a4paper,landscape,margin=6mm,top=6mm,bottom=7mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{multicol}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+
+% ---------- ETH colours ----------
+\definecolor{ethblue}{HTML}{215CAF}
+\definecolor{ethpetrol}{HTML}{007894}
+\definecolor{ethgreen}{HTML}{627313}
+\definecolor{ethred}{HTML}{B7352D}
+\definecolor{ethgray}{HTML}{6F6F6F}
+\definecolor{codebg}{HTML}{F4F6FA}
+\definecolor{mlcomment}{HTML}{228B22}
+\definecolor{mlstring}{HTML}{A020F0}
+\definecolor{mlkey}{HTML}{0000FF}
+
+% ---------- Layout tweaks ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\setlength{\columnsep}{3mm}
+\setlength{\columnseprule}{0.2pt}
+\def\columnseprulecolor{\color{ethgray!50}}
+\setlist{nosep,leftmargin=*,label=\textcolor{ethblue}{\scriptsize$\blacktriangleright$}}
+\setlength{\abovedisplayskip}{1pt}\setlength{\belowdisplayskip}{1pt}
+\setlength{\abovedisplayshortskip}{0pt}\setlength{\belowdisplayshortskip}{0pt}
+\renewcommand{\arraystretch}{1.05}
+
+% Section headers: coloured bars (ETH cheatsheet style)
+\newcommand{\secbar}[1]{\colorbox{ethblue}{\parbox{\dimexpr\columnwidth-2\fboxsep}{\strut\thesection\ #1}}}
+\newcommand{\subbar}[1]{\thesubsection\ #1\ \leaders\hbox{\rule[0.5ex]{1pt}{0.3pt}}\hfill\null}
+\titleformat{\section}{\normalfont\bfseries\color{white}}{}{0pt}{\secbar}
+\titlespacing*{\section}{0pt}{3pt}{1pt}
+\titleformat{\subsection}{\normalfont\bfseries\color{ethblue}}{}{0pt}{\subbar}
+\titlespacing*{\subsection}{0pt}{2pt}{0.5pt}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+
+% Header / footer
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\tiny\color{ethgray}Robot Dynamics HS26 -- MATLAB Cheatsheet}
+\fancyfoot[C]{\tiny\color{ethgray}Convention: $\mathbf{C}_{AB}$ maps $B$-coords to $A$-coords: ${}_A\mathbf{r}=\mathbf{C}_{AB}\,{}_B\mathbf{r}$ \quad Quaternion $\xi=[w;\,x;\,y;\,z]$ (Hamilton)}
+\fancyfoot[R]{\tiny\color{ethgray}Aaryan -- page \thepage}
+
+% ---------- MATLAB listings ----------
+\lstdefinestyle{ml}{
+  language=Matlab,
+  basicstyle=\ttfamily\fontsize{6.2}{7}\selectfont,
+  keywordstyle=\color{mlkey},
+  commentstyle=\color{mlcomment}\itshape,
+  stringstyle=\color{mlstring},
+  backgroundcolor=\color{codebg},
+  frame=leftline, framerule=1.2pt, rulecolor=\color{ethpetrol},
+  xleftmargin=3pt, framexleftmargin=2pt,
+  aboveskip=1pt, belowskip=1pt,
+  columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=false,
+  showstringspaces=false, upquote=true,
+  morekeywords={syms,sym,jacobian,simplify,matlabFunction,subs,diff,pinv,null,ode45,quadprog,assert,feval,skew,sgn},
+  literate={~}{{$\sim$}}1
+}
+\lstnewenvironment{ml}{\lstset{style=ml}}{}
+\newcommand{\mc}[1]{\texttt{\detokenize{#1}}}
+
+% Warning/Tip boxes
+\newtcolorbox{tip}{colback=ethgreen!8,colframe=ethgreen,boxrule=0.4pt,left=1pt,right=1pt,top=0pt,bottom=0pt,arc=0pt,fontupper=\scriptsize}
+\newtcolorbox{warn}{colback=ethred!7,colframe=ethred,boxrule=0.4pt,left=1pt,right=1pt,top=0pt,bottom=0pt,arc=0pt,fontupper=\scriptsize}
+
+% Math shortcuts
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\T}{\mathbf{T}}
+\newcommand{\J}{\mathbf{J}}
+\newcommand{\M}{\mathbf{M}}
+\newcommand{\q}{\mathbf{q}}
+\newcommand{\dq}{\dot{\mathbf{q}}}
+\newcommand{\ddq}{\ddot{\mathbf{q}}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\g}{\mathbf{g}}
+\newcommand{\bI}{\mathbb{I}}
+\newcommand{\skw}[1]{[#1]_\times}
+\newcommand{\pinv}{^{+}}
+
+\begin{document}
+\scriptsize
+\begin{multicols*}{4}
+
+% ---------- Title block ----------
+\begin{tcolorbox}[colback=ethblue,colframe=ethblue,coltext=white,arc=0pt,left=2pt,right=2pt,top=1pt,bottom=1pt]
+{\bfseries\normalsize Robot Dynamics -- MATLAB}\\
+{\tiny 151-0851-00L \textbullet{} ETH Zürich, RSL (Prof.\ Hutter) \textbullet{} HS 2026}
+\end{tcolorbox}
+
+% =====================================================================
+\section{MATLAB Essentials}
+\subsection{Workspace \& exercise framework}
+\begin{ml}
+init_workspace;          % addpath(genpath(exerciseFolder))
+loadviz;                 % creates object abbRobot
+abbRobot.setJointPositions(q);   % q: 6x1
+evaluate_problems;       % compares to *_solution.p
+which jointToPosJac      % which file is on path?
+out = feval('jointToPosJac', q);  % call by name (string)
+clc; clear; close all;   % fresh start
+\end{ml}
+\subsection{Vectors, matrices, indexing}
+\begin{ml}
+q = zeros(6,1); v = [1;2;3];  % COLUMN vectors!
+A = eye(3); B = blkdiag(A,2*A); Z = zeros(3,6);
+T(1:3,1:3)   % rotation part   T(1:3,4) position
+J(:,k)       % k-th column     J(end,:) last row
+x(end+1) = 5;             % append
+A'  % conj. transpose    A.'  % plain transpose
+A*B % matrix product     A.*B % element-wise
+A\b % solve A x = b (prefer over inv(A)*b)
+b/A % solve x A = b
+numel(q), size(J,2), length(q), reshape(v,3,[])
+v(:)          % force column; repmat(v,1,4)
+dot(a,b), cross(a,b), norm(v), trace(C), det(C)
+kron(A,B), diag(v), triu(A), rank(J), cond(J)
+[U,S,V] = svd(J); [V,D] = eig(M); N = null(J);
+\end{ml}
+\subsection{Functions}
+\begin{ml}
+function [out1,out2] = myFun(q, varargin)
+  if nargin < 2, k = 1; else, k = varargin{1}; end
+  out1 = k*q; out2 = [];
+end
+f   = @(x) x.^2 + 1;          % anonymous function
+Rz  = @(a) [cos(a) -sin(a) 0; sin(a) cos(a) 0; 0 0 1];
+% local functions go at the END of a function file
+\end{ml}
+\subsection{Control flow, structs, cells, printing}
+\begin{ml}
+for k = 1:6, ... end;   while err > tol, ... end
+if norm(e) < 1e-6 && it < 100, ... elseif ..., else ... end
+s.m = 2; s.I = eye(3);  params = struct('m',2,'l',0.3);
+c = {'jointToPosJac','jointToRotJac'}; fun = c{1};
+fprintf('%s: err = %.3e\n', fun, err);  disp(A)
+tic; ...; t = toc;       % timing
+assert(norm(A-B) < 1e-9, 'mismatch');
+isequal(size(A),[3 3])   % shape checks
+\end{ml}
+\begin{warn}\textbf{Classic bugs:} row vs.\ column vectors; \mc{'} on complex/sym (use \mc{.'}); \mc{*} vs \mc{.*}; indexing starts at \textbf{1}; \mc{==} on floats (use tolerance); \mc{q(3)} inside \mc{jointToTransform23} when \mc{q} is a scalar (guard with \mc{if length(q)>1}).\end{warn}
+
+% =====================================================================
+\section{Rotations}
+\subsection{Elementary rotations \& skew matrix}
+\begin{ml}
+Cx = @(a) [1 0 0; 0 cos(a) -sin(a); 0 sin(a) cos(a)];
+Cy = @(a) [cos(a) 0 sin(a); 0 1 0; -sin(a) 0 cos(a)];
+Cz = @(a) [cos(a) -sin(a) 0; sin(a) cos(a) 0; 0 0 1];
+skew = @(v) [ 0   -v(3)  v(2);
+              v(3)  0   -v(1);
+             -v(2) v(1)   0 ];     % skew(a)*b = cross(a,b)
+unskew = @(S) [S(3,2); S(1,3); S(2,1)];
+\end{ml}
+Properties: $\C^{-1}=\C^\top$, $\det\C=1$, $\C_{AC}=\C_{AB}\C_{BC}$, $\C_{BA}=\C_{AB}^\top$.
+\begin{ml}
+isRot = norm(C'*C - eye(3)) < 1e-9 && abs(det(C)-1) < 1e-9;
+\end{ml}
+
+\subsection{Euler angles}
+ZYX (yaw--pitch--roll) $\C=\C_z(z)\C_y(y)\C_x(x)$; \; XYZ $\C=\C_x(x)\C_y(y)\C_z(z)$
+\begin{ml}
+% ZYX  -> chi = [z; y; x]
+z = atan2(C(2,1), C(1,1));
+y = atan2(-C(3,1), sqrt(C(3,2)^2 + C(3,3)^2));
+x = atan2(C(3,2), C(3,3));
+% XYZ  -> chi = [x; y; z]
+x = atan2(-C(2,3), C(3,3));
+y = atan2( C(1,3), sqrt(C(1,1)^2 + C(1,2)^2));
+z = atan2(-C(1,2), C(1,1));
+wrap = @(a) atan2(sin(a), cos(a));   % to (-pi, pi]
+\end{ml}
+\begin{tip}Always \mc{atan2}, never \mc{atan}/\mc{asin} alone. Singular at $y=\pm\pi/2$ (gimbal lock).\end{tip}
+
+\subsection{Angle--axis / rotation vector}
+$\C=\cos\theta\,\bI+\sin\theta\,\skw{\mathbf n}+(1-\cos\theta)\,\mathbf n\mathbf n^\top$, \;$\bm\varphi=\theta\mathbf n$
+\begin{ml}
+function C = rotVecToRotMat(phi)
+  th = norm(phi);
+  if th < 1e-12, C = eye(3); return; end
+  n = phi/th;  S = [0 -n(3) n(2); n(3) 0 -n(1); -n(2) n(1) 0];
+  C = cos(th)*eye(3) + sin(th)*S + (1-cos(th))*(n*n');
+end
+function phi = rotMatToRotVec(C)
+  th = acos(max(-1, min(1, (trace(C)-1)/2)));  % clamp!
+  if th < 1e-12, phi = zeros(3,1); return; end
+  n = 1/(2*sin(th)) * [C(3,2)-C(2,3); C(1,3)-C(3,1); C(2,1)-C(1,2)];
+  phi = th*n;
+end
+\end{ml}
+\begin{warn}Near $\theta=\pi$ the $1/\sin\theta$ formula is ill-conditioned -- go via quaternion or eigenvector of $\C$ (\mc{[V,D]=eig(C)}, eigenvalue 1).\end{warn}
+
+\subsection{Unit quaternions $\xi=[\xi_0;\check{\bm\xi}]=[\cos\tfrac\theta2;\ \mathbf n\sin\tfrac\theta2]$}
+\begin{ml}
+function p = quatMult(q, r)          % q (x) r
+  q0 = q(1); qv = q(2:4); r0 = r(1); rv = r(2:4);
+  p = [q0*r0 - qv'*rv;
+       q0*rv + r0*qv + cross(qv, rv)];
+end
+qConj = @(q) [q(1); -q(2:4)];        % = inverse (unit)
+function C = quatToRotMat(q)
+  w = q(1); n = q(2:4);
+  C = (2*w^2-1)*eye(3) + 2*w*skew(n) + 2*(n*n');
+end
+function q = rotMatToQuat(C)
+  q = 0.5*[sqrt(1+trace(C));
+    sign(C(3,2)-C(2,3))*sqrt(C(1,1)-C(2,2)-C(3,3)+1);
+    sign(C(1,3)-C(3,1))*sqrt(C(2,2)-C(3,3)-C(1,1)+1);
+    sign(C(2,1)-C(1,2))*sqrt(C(3,3)-C(1,1)-C(2,2)+1)];
+end
+Ar = quatToRotMat(q_AB)*Br;          % rotVecWithQuat
+% equivalently: [0;Ar] = q_AB (x) [0;Br] (x) conj(q_AB)
+q = q/norm(q);                       % re-normalise!
+\end{ml}
+Matrix form: $\xi_1\otimes\xi_2=\mathbf M_l(\xi_1)\,\xi_2=\mathbf M_r(\xi_2)\,\xi_1$
+\begin{ml}
+Ml = @(q) [q(1) -q(2:4)'; q(2:4)  q(1)*eye(3)+skew(q(2:4))];
+Mr = @(q) [q(1) -q(2:4)'; q(2:4)  q(1)*eye(3)-skew(q(2:4))];
+\end{ml}
+\begin{tip}$\xi$ and $-\xi$ are the same rotation. \mc{sign(0)=0} in \mc{rotMatToQuat} can break the 180$^\circ$ case -- check with \mc{norm(q)}. Robust alternative: pick largest diagonal (Shepperd).\end{tip}
+
+% =====================================================================
+\section{Homogeneous Transformations \& FK}
+$\T_{AB}=\begin{bmatrix}\C_{AB}&{}_A\mathbf r_{AB}\\\mathbf 0&1\end{bmatrix}$,\;
+$\T_{AB}^{-1}=\begin{bmatrix}\C_{AB}^\top&-\C_{AB}^\top{}_A\mathbf r_{AB}\\\mathbf 0&1\end{bmatrix}$
+\begin{ml}
+Tmk  = @(C,r) [C, r(:); 0 0 0 1];
+Tinv = @(T) [T(1:3,1:3)', -T(1:3,1:3)'*T(1:3,4); 0 0 0 1];
+Ar_h = T_AB * [Br; 1];   Ar = Ar_h(1:3);  % point map
+% direction vectors: use C only (no translation!)
+\end{ml}
+\subsection{Forward kinematics chain (ABB IRB120)}
+\begin{ml}
+function T_IE = jointToTransformIE(q)
+  T_IE = getTransformI0() * jointToTransform01(q) * ...
+         jointToTransform12(q) * jointToTransform23(q) * ...
+         jointToTransform34(q) * jointToTransform45(q) * ...
+         jointToTransform56(q) * getTransform6E();
+end
+I_r_IE = T_IE(1:3,4);   C_IE = T_IE(1:3,1:3);
+quat   = rotMatToQuat(C_IE);        % jointToQuat
+\end{ml}
+Each joint transform: rotation about joint axis in its local frame + constant offset, e.g.\
+\begin{ml}
+T01 = [Cz(q(1)), [0;0;0.145]; 0 0 0 1];   % z-axis joint
+T12 = [Cy(q(2)), [0;0;0.145]; 0 0 0 1];   % y-axis joint
+T34 = [Cx(q(4)), [0.134;0;0.070]; 0 0 0 1];
+\end{ml}
+\subsection{Store all intermediate frames (for Jacobians)}
+\begin{ml}
+function [T_Ik] = allTransforms(q)
+  Tk = {getTransformI0(), jointToTransform01(q), ...
+        jointToTransform12(q), jointToTransform23(q), ...
+        jointToTransform34(q), jointToTransform45(q), ...
+        jointToTransform56(q)};
+  T_Ik = cell(numel(Tk),1); T = eye(4);
+  for k = 1:numel(Tk)
+    T = T*Tk{k};  T_Ik{k} = T;      % T_I0, T_I1 ... T_I6
+  end
+end
+\end{ml}
+
+% =====================================================================
+\section{Differential Kinematics}
+$\mathbf w_E=\begin{bmatrix}{}_I\mathbf v_E\\{}_I\bm\omega_E\end{bmatrix}=\J_{0}(\q)\,\dq$,\quad
+$\J_0=\begin{bmatrix}\J_P\\\J_R\end{bmatrix}$ (geometric),\quad
+$\dot{\bm\chi}_E=\J_{e,A}\,\dq$ (analytical)
+\subsection{Geometric Jacobian (revolute joints)}
+${}_I\J_{P,i}={}_I\mathbf n_i\times({}_I\mathbf r_{IE}-{}_I\mathbf r_{Ii})$,\quad ${}_I\J_{R,i}={}_I\mathbf n_i$\\
+Prismatic: ${}_I\J_{P,i}={}_I\mathbf n_i$, ${}_I\J_{R,i}=\mathbf 0$.
+\begin{ml}
+function [J_P, J_R] = geomJacobian(q)
+  T  = allTransforms(q);            % {T_I0,...,T_I6}
+  TE = T{end}*getTransform6E();  r_IE = TE(1:3,4);
+  n_loc = [0 0 1; 0 1 0; 0 1 0; 1 0 0; 0 1 0; 1 0 0]'; % axes in frame k
+  J_P = zeros(3,6); J_R = zeros(3,6);
+  for k = 1:6
+    C_Ik = T{k+1}(1:3,1:3);  r_Ik = T{k+1}(1:3,4);
+    n_k  = C_Ik * n_loc(:,k);        % joint axis in I
+    J_P(:,k) = cross(n_k, r_IE - r_Ik);
+    J_R(:,k) = n_k;
+  end
+end
+\end{ml}
+\begin{warn}Joint $k$ is between frames $k\!-\!1$ and $k$: its axis/origin is expressed via $\T_{Ik}$ (\mc{T{k+1}} in the 1-based cell above, since \mc{T{1}}$=\T_{I0}$). Axis \emph{local} to frame $k$ = the axis used inside \mc{jointToTransform(k-1)(k)}.\end{warn}
+
+\subsection{Numerical check (finite differences)}
+\begin{ml}
+function J = numJac(f, q, h)         % f: q -> R^m
+  if nargin < 3, h = 1e-7; end
+  f0 = f(q); J = zeros(numel(f0), numel(q));
+  for k = 1:numel(q)
+    dq = zeros(size(q)); dq(k) = h;
+    J(:,k) = (f(q+dq) - f(q-dq)) / (2*h);   % central
+  end
+end
+JP_num = numJac(@jointToPosition, q);
+norm(JP_num - jointToPosJac(q))     % ~1e-9 expected
+\end{ml}
+Rotational check: $\skw{\bm\omega}=\dot\C\C^\top$
+\begin{ml}
+dq = randn(6,1); h = 1e-7;
+Cd = (jointToRotMat(q+h*dq) - jointToRotMat(q-h*dq))/(2*h);
+W  = Cd * jointToRotMat(q)';   w = unskew(W);
+norm(w - jointToRotJac(q)*dq)
+\end{ml}
+
+\subsection{Analytical Jacobian \& rate mappings}
+Write ${}_I\bm\omega=\mathbf E_\omega(\bm\chi_R)\,\dot{\bm\chi}_R$ $\Rightarrow$ $\J_{A,R}=\mathbf E_\omega^{-1}\J_R$ (check which of $\mathbf E_R$/$\mathbf E_R^{-1}$ your script calls which!).\\
+ZYX, $\bm\chi_R=[z;y;x]$: $\ {}_I\bm\omega=\begin{bmatrix}0&-s_z&c_yc_z\\0&c_z&c_ys_z\\1&0&-s_y\end{bmatrix}\begin{bmatrix}\dot z\\\dot y\\\dot x\end{bmatrix}$
+\begin{ml}
+E_w = @(z,y) [0 -sin(z) cos(y)*cos(z);
+                   0  cos(z) cos(y)*sin(z);
+                   1  0     -sin(y)];     % omega = E_w*chidot
+chidot = E_w(z,y) \ omega;           % singular at y=+-pi/2
+\end{ml}
+Quaternion rates: $\dot\xi_{IB}=\tfrac12\begin{bmatrix}0\\{}_I\bm\omega\end{bmatrix}\!\otimes\xi_{IB}=\tfrac12\,\xi_{IB}\otimes\begin{bmatrix}0\\{}_B\bm\omega\end{bmatrix}$
+\begin{ml}
+qdot = 0.5*quatMult([0; I_w], q_IB);
+q_IB = q_IB + dt*qdot;  q_IB = q_IB/norm(q_IB);
+\end{ml}
+
+\subsection{Symbolic Jacobian}
+\begin{ml}
+syms q1 q2 q3 q4 q5 q6 real
+q  = [q1;q2;q3;q4;q5;q6];      % or: q = sym('q',[6 1],'real');
+T  = jointToTransformIE(q);    % works if fns use only +,*,sin,cos
+r  = T(1:3,4);
+JP = simplify(jacobian(r, q));
+JP_fun = matlabFunction(JP, 'Vars', {q}, 'File', 'JP_gen');
+double(subs(JP, q, [0.1;0;0;0;0;0]))   % numeric eval
+\end{ml}
+\begin{tip}Inside functions that should also take \mc{sym} inputs: don't preallocate with \mc{zeros} (numeric type) -- use \mc{sym(zeros(3,6))} or build by concatenation.\end{tip}
+
+% =====================================================================
+\section{Inverse (Differential) Kinematics}
+\subsection{Pseudo-inverses}
+$\J\pinv=\J^\top(\J\J^\top)^{-1}$ (fat, full row rank);\quad
+damped: $\J^\top(\J\J^\top+\lambda^2\bI)^{-1}$
+\begin{ml}
+Jp   = pinv(J);                          % SVD-based
+Jdmp = J' / (J*J' + lambda^2*eye(size(J,1)));  % damped LS
+dq   = Jdmp * dx;                        % lambda ~ 0.01-0.1
+N    = eye(size(J,2)) - pinv(J)*J;       % null-space projector
+sv   = svd(J); manip = prod(sv);          % sqrt(det(J*J'))
+\end{ml}
+\subsection{Orientation error}
+$\Delta\bm\varphi=\text{rotVec}(\C_{IE}^{*}\,\C_{IE}^\top)$ (in $I$) -- \textbf{not} difference of Euler angles.
+\begin{ml}
+dr   = r_des - r_cur;
+dphi = rotMatToRotVec(C_des * C_cur');   % I-frame
+dx   = [dr; dphi];                        % 6x1 pose error
+\end{ml}
+\subsection{Iterative inverse kinematics (Newton)}
+\begin{ml}
+function q = inverseKinematics(r_des, C_des, q0, tol)
+  q = q0; it = 0; max_it = 100; alpha = 0.5; lambda = 1e-3;
+  J = [jointToPosJac(q); jointToRotJac(q)];
+  dx = poseErr(q);
+  while norm(dx) > tol && it < max_it
+    J  = [jointToPosJac(q); jointToRotJac(q)];
+    q  = q + alpha * (J'/(J*J' + lambda^2*eye(6))) * dx;
+    dx = poseErr(q);  it = it + 1;
+    % abbRobot.setJointPositions(q); drawnow;   % visualise
+  end
+  function e = poseErr(q)                 % nested fn
+    e = [r_des - jointToPosition(q);
+         rotMatToRotVec(C_des*jointToRotMat(q)')];
+  end
+end
+\end{ml}
+\subsection{Kinematic trajectory control}
+$\dq=\J\pinv\big(\mathbf w^*+\mathbf K_p\Delta\mathbf x\big)$
+\begin{ml}
+for t = 0:dt:tEnd
+  [r_d, v_d] = traj(t);                  % desired pos & vel
+  JP = jointToPosJac(q);
+  dq = pinv(JP) * (v_d + kp*(r_d - jointToPosition(q)));
+  q  = q + dq*dt;                        % explicit Euler
+  abbRobot.setJointPositions(q); pause(dt);
+end
+\end{ml}
+\subsection{Multi-task / null-space}
+$\dq=\J_1\pinv\mathbf w_1+\mathbf N_1(\J_2\mathbf N_1)\pinv(\mathbf w_2-\J_2\J_1\pinv\mathbf w_1)$
+\begin{ml}
+N1 = eye(n) - pinv(J1)*J1;
+dq = pinv(J1)*w1 + N1*pinv(J2*N1)*(w2 - J2*pinv(J1)*w1);
+% equal priority: stack & weight
+dq = pinv([W1*J1; W2*J2]) * [W1*w1; W2*w2];
+% secondary objective (e.g. joint centring)
+dq = pinv(J)*w + N*(-k0*(q - q_mid));
+\end{ml}
+\begin{tip}Recursive $n$-task: $\dq_i=\dq_{i-1}+(\J_i\bar{\mathbf N}_{i-1})\pinv(\mathbf w_i-\J_i\dq_{i-1})$, $\bar{\mathbf N}_i=\bar{\mathbf N}_{i-1}-(\J_i\bar{\mathbf N}_{i-1})\pinv(\J_i\bar{\mathbf N}_{i-1})$.\end{tip}
+
+% =====================================================================
+\section{Dynamics (fixed base)}
+$\M(\q)\ddq+\bb(\q,\dq)+\g(\q)=\bm\tau+\J_c^\top\mathbf F_c$
+\subsection{Projected Newton--Euler}
+$\M=\sum_i \J_{S_i}^\top m_i\J_{S_i}+\J_{R_i}^\top\,{}_I\bm\Theta_{S_i}\,\J_{R_i}$\\
+$\bb=\sum_i \J_{S_i}^\top m_i\dot\J_{S_i}\dq+\J_{R_i}^\top\big({}_I\bm\Theta_{S_i}\dot\J_{R_i}\dq+\bm\omega_i\times{}_I\bm\Theta_{S_i}\bm\omega_i\big)$\\
+$\g=-\sum_i\J_{S_i}^\top m_i\,{}_I\mathbf g$,\quad ${}_I\bm\Theta={}\C_{Ik}\,{}_k\bm\Theta\,\C_{Ik}^\top$
+\begin{ml}
+syms q [6 1] real; syms dq [6 1] real;
+M = sym(zeros(6)); b = sym(zeros(6,1)); g = sym(zeros(6,1));
+I_g = [0;0;-9.81];
+for k = 1:6
+  T_Ik  = ...;  C_Ik = T_Ik(1:3,1:3);
+  r_IS  = T_Ik*[k_r_kS{k};1]; r_IS = r_IS(1:3);   % CoM in I
+  J_S   = jacobian(r_IS, q);
+  J_R   = ...;                        % geometric rot. Jacobian
+  I_Th  = C_Ik*k_Theta{k}*C_Ik';
+  w     = J_R*dq;
+  dJ_S  = dAdt(J_S, q, dq);  dJ_R = dAdt(J_R, q, dq);
+  M = M + J_S'*m(k)*J_S + J_R'*I_Th*J_R;
+  b = b + J_S'*m(k)*dJ_S*dq + J_R'*(I_Th*dJ_R*dq + cross(w, I_Th*w));
+  g = g - J_S'*m(k)*I_g;
+end
+M = simplify(M);   % can be SLOW -> simplify per term / skip
+function dA = dAdt(A, q, dq)          % time derivative
+  dA = reshape(jacobian(A(:), q)*dq, size(A));
+end
+\end{ml}
+\subsection{Lagrange (symbolic)}
+$\mathcal T=\tfrac12\dq^\top\M\dq$,\; $\mathcal U=-\sum m_i\,{}_I\mathbf g^\top\mathbf r_{S_i}$,\;
+$\frac{d}{dt}\frac{\partial\mathcal L}{\partial\dq}-\frac{\partial\mathcal L}{\partial\q}=\bm\tau$
+\begin{ml}
+Tkin = 0.5*dq'*M*dq;  U = ...;
+M  = hessian(Tkin, dq);                         % = M
+g  = jacobian(U, q)';
+b  = jacobian(jacobian(Tkin,dq)', q)*dq - jacobian(Tkin, q)';
+% b = C(q,dq)*dq  (Coriolis + centrifugal)
+\end{ml}
+\subsection{Code generation \& sanity checks}
+\begin{ml}
+matlabFunction(M, 'File','M_fun', 'Vars',{q});
+matlabFunction(b, 'File','b_fun', 'Vars',{q,dq});
+matlabFunction(g, 'File','g_fun', 'Vars',{q});
+Mn = M_fun(q0);
+issymmetric(round(Mn,10)), all(eig(Mn) > 0)   % SPD?
+norm(b_fun(q0, zeros(n,1)))                    % = 0 at rest
+% Mdot - 2C skew-symmetric (energy consistency)
+\end{ml}
+\subsection{Forward simulation}
+\begin{ml}
+x0 = [q0; zeros(n,1)];
+[t, X] = ode45(@(t,x) rhs(t,x), [0 5], x0);
+function dx = rhs(t, x)
+  n = numel(x)/2; q = x(1:n); dq = x(n+1:end);
+  tau = controller(t, q, dq);
+  ddq = M_fun(q) \ (tau - b_fun(q,dq) - g_fun(q));
+  dx  = [dq; ddq];
+end
+% semi-implicit Euler for fixed-step loops:
+dq = dq + dt*ddq;   q = q + dt*dq;
+plot(t, X(:,1:n)); legend('q_1','q_2'); grid on;
+\end{ml}
+\begin{tip}Energy check without control/damping: $E=\tfrac12\dq^\top\M\dq+\mathcal U$ must stay constant (tighten \mc{odeset('RelTol',1e-8)}).\end{tip}
+
+% =====================================================================
+\section{Model-based Control}
+\subsection{Joint space}
+PD + gravity comp.: $\bm\tau=\mathbf K_p(\q^*-\q)-\mathbf K_d\dq+\g(\q)$\\
+Inverse dynamics: $\bm\tau=\M\big(\ddq^*+\mathbf K_p(\q^*-\q)+\mathbf K_d(\dq^*-\dq)\big)+\bb+\g$
+\begin{ml}
+tau = kp*(q_d - q) - kd*dq + g_fun(q);
+ddq_ref = ddq_d + kp*(q_d - q) + kd*(dq_d - dq);
+tau = M_fun(q)*ddq_ref + b_fun(q,dq) + g_fun(q);
+% critical damping per joint: kd = 2*sqrt(kp)  (unit mass)
+\end{ml}
+\subsection{Task / operational space}
+$\bm\Lambda=(\J\M^{-1}\J^\top)^{-1}$,\;
+$\bm\mu=\bm\Lambda\J\M^{-1}\bb-\bm\Lambda\dot\J\dq$,\;
+$\mathbf p=\bm\Lambda\J\M^{-1}\g$\\
+$\bm\tau=\J^\top\big(\bm\Lambda\dot{\mathbf w}^*+\bm\mu+\mathbf p\big)$,\;
+$\dot{\mathbf w}^*=\dot{\mathbf w}_d+\mathbf K_p\Delta\mathbf x+\mathbf K_d(\mathbf w_d-\J\dq)$
+\begin{ml}
+Minv   = M \ eye(n);
+Lambda = pinv(J*Minv*J');                % pinv if singular
+mu     = Lambda*J*Minv*b - Lambda*dJ*dq;
+p      = Lambda*J*Minv*g;
+dw_ref = dw_d + Kp*[r_d - r; dphi] + Kd*(w_d - J*dq);
+tau    = J'*(Lambda*dw_ref + mu + p);
+% + null-space posture: tau = tau + (eye(n) - J'*Jbar')*tau0
+Jbar   = Minv*J'*Lambda;                 % dyn. consistent inverse
+\end{ml}
+\subsection{Hybrid motion/force control}
+Selection matrices in contact frame $C$: $\bm\Sigma_p$ (motion dirs), $\bm\Sigma_f=\bI-\bm\Sigma_p$
+\begin{ml}
+Sp = diag([1 1 0  1 1 1]);   Sf = eye(6) - Sp;  % z = force dir
+S_M = blkdiag(C_IC,C_IC)*Sp*blkdiag(C_IC,C_IC)';   % to I frame
+S_F = blkdiag(C_IC,C_IC)*Sf*blkdiag(C_IC,C_IC)';
+tau = J'*(Lambda*S_M*dw_ref + S_F*F_des + mu + p);
+\end{ml}
+
+% =====================================================================
+\section{Floating Base / Legged Robots}
+$\q=[\q_b;\q_j]$, $\mathbf u=[{}_I\mathbf v_B;{}_B\bm\omega_{IB};\dq_j]$, \;
+$\M\dot{\mathbf u}+\bb+\g=\mathbf S^\top\bm\tau+\J_c^\top\mathbf F_c$,\; $\mathbf S=[\mathbf 0\;\bI]$
+\begin{ml}
+nb = 6; nj = 12; S = [zeros(nj,nb), eye(nj)];
+% contact constraint (point feet): J_c*u = 0, J_c*du + dJ_c*u = 0
+Jc = [J_LF; J_RF; J_LH; J_RH];          % stacked 3xN each
+Nc = eye(nb+nj) - pinv(Jc)*Jc;          % contact null-space
+\end{ml}
+\subsection{Contact force elimination}
+$\mathbf F_c=-(\J_c\M^{-1}\J_c^\top)^{-1}\big(\J_c\M^{-1}(\mathbf S^\top\bm\tau-\bb-\g)+\dot\J_c\mathbf u\big)$
+\begin{ml}
+Minv = M \ eye(size(M));
+Lc   = pinv(Jc*Minv*Jc');
+Fc   = -Lc*(Jc*Minv*(S'*tau - b - g) + dJc*u);
+du   = Minv*(S'*tau + Jc'*Fc - b - g);
+\end{ml}
+\subsection{Inverse dynamics via projection}
+$\mathbf P=\bI-\J_c\pinv\J_c$:\quad $\bm\tau^*=(\mathbf P\mathbf S^\top)\pinv\mathbf P(\M\dot{\mathbf u}^*+\bb+\g)$
+\begin{ml}
+P   = eye(nb+nj) - pinv(Jc)*Jc;
+tau = pinv(P*S') * P * (M*du_des + b + g);
+\end{ml}
+\subsection{QP-based (whole-body) control}
+$\min_{\mathbf x}\ \tfrac12\mathbf x^\top\mathbf H\mathbf x+\mathbf f^\top\mathbf x$ s.t.\ equality/inequality, $\mathbf x=[\dot{\mathbf u};\mathbf F_c;\bm\tau]$
+\begin{ml}
+% least-squares task ||A x - b||^2 -> H = A'*A, f = -A'*b
+H = A'*A + 1e-6*eye(nx);  f = -A'*bt;
+Aeq = [M, -Jc', -S'];  beq = -(b+g);    % dynamics
+Aeq = [Aeq; Jc, zeros(nc,nc+nj)]; beq = [beq; -dJc*u];
+% friction pyramid per foot: |Fx|,|Fy| <= mu*Fz, Fz >= 0
+Af = [1 0 -mu; -1 0 -mu; 0 1 -mu; 0 -1 -mu; 0 0 -1];
+opts = optimoptions('quadprog','Display','off');
+x = quadprog(H, f, Ain, bin, Aeq, beq, [], [], [], opts);
+\end{ml}
+\begin{tip}Hierarchical QP: solve task 1, then optimise task 2 in its null space: $\mathbf x=\mathbf x_1^*+\mathbf N_1\mathbf z$. Without Optimization Toolbox: use \mc{lsqlin}/\mc{pinv} for equality-only problems.\end{tip}
+\subsection{Support polygon / CoM}
+\begin{ml}
+r_com = zeros(3,1); J_com = zeros(3,n);
+for i = 1:nb, r_com = r_com + m(i)*r_S{i}; J_com = J_com + m(i)*J_S{i}; end
+r_com = r_com/sum(m);  J_com = J_com/sum(m);
+inPoly = inpolygon(r_com(1), r_com(2), feet(1,:), feet(2,:));
+\end{ml}
+
+% =====================================================================
+\section{Rotorcraft (Quadrotor)}
+$T_i=b\,\omega_i^2$,\; $Q_i=d\,\omega_i^2$\quad (thrust, drag moment)\\
+$m\,{}_I\ddot{\mathbf r}=\C_{IB}\begin{bmatrix}0\\0\\T\end{bmatrix}+m\,{}_I\mathbf g$,\quad
+$\bm\Theta\,{}_B\dot{\bm\omega}+{}_B\bm\omega\times\bm\Theta\,{}_B\bm\omega={}_B\mathbf M$
+\begin{ml}
+% '+' configuration, rotors 1..4 on +x,+y,-x,-y (CHECK
+% sign/rotation-direction convention of the exercise!)
+A = [ b    b    b    b;
+      0    l*b  0   -l*b;     % roll  moment Mx
+     -l*b  0    l*b  0;       % pitch moment My
+     -d    d   -d    d];      % yaw   moment Mz
+w2 = A \ [T; Mx; My; Mz];  w2 = max(w2, 0);   % saturate
+w  = sqrt(w2);
+% dynamics RHS
+F_I  = C_IB*[0;0;sum(b*w.^2)] + m*[0;0;-9.81];
+ddr  = F_I/m;
+dw_B = Theta \ (M_B - cross(w_B, Theta*w_B));
+\end{ml}
+\subsection{Cascaded control (hover linearisation)}
+\begin{ml}
+% position PD -> desired accel -> desired attitude + thrust
+a_d   = ddr_d + Kd*(dr_d - dr) + Kp*(r_d - r);
+T     = m*(a_d(3) + 9.81);                  % small-angle
+phi_d =  (a_d(1)*sin(psi) - a_d(2)*cos(psi)) / 9.81; % roll
+th_d  =  (a_d(1)*cos(psi) + a_d(2)*sin(psi)) / 9.81; % pitch
+% attitude PD -> body moments
+M_B = Kp_att*[phi_d-phi; th_d-th; psi_d-psi] - Kd_att*w_B;
+\end{ml}
+\begin{tip}Fixed-wing basics: $L=\tfrac12\rho V^2 S C_L(\alpha)$, $D=\tfrac12\rho V^2 S C_D(\alpha)$, $C_L\approx C_{L0}+C_{L\alpha}\alpha$, $C_D\approx C_{D0}+kC_L^2$. Trim: solve $\mathbf f(\mathbf x^*,\mathbf u^*)=\mathbf 0$ with \mc{fsolve}.\end{tip}
+
+% =====================================================================
+\section{Numerics, Linearisation \& Plotting}
+\subsection{Linearisation \& LQR}
+\begin{ml}
+f  = @(x,u) rhs_xu(x,u);           % dx = f(x,u)
+A  = numJac(@(x) f(x,u0), x0);     % df/dx at equilibrium
+B  = numJac(@(u) f(x0,u), u0);     % df/du
+% symbolic: A = jacobian(fsym, x); B = jacobian(fsym, u);
+K  = lqr(A, B, Q, R);              % Control Toolbox
+u  = u0 - K*(x - x0);
+eig(A - B*K)                       % all Re < 0 ?
+rank(ctrb(A,B)) == size(A,1)       % controllable?
+\end{ml}
+\subsection{Trajectories}
+\begin{ml}
+% cubic between (q0,0) and (qf,0) in time tf
+s   = @(t) 3*(t/tf).^2 - 2*(t/tf).^3;
+qt  = @(t) q0 + (qf-q0)*s(t);
+% quintic: 10 s^3 - 15 s^4 + 6 s^5 (zero vel & acc)
+% circle in task space
+r_d = @(t) c + R*[cos(w*t); sin(w*t); 0];
+v_d = @(t) R*w*[-sin(w*t); cos(w*t); 0];
+% quaternion slerp between qa, qb
+if qa'*qb < 0, qb = -qb; end       % shortest path
+th = acos(min(1, qa'*qb));
+qs = (sin((1-s)*th)*qa + sin(s*th)*qb)/sin(th);
+\end{ml}
+\subsection{Plotting \& animation}
+\begin{ml}
+figure; subplot(2,1,1); plot(t, q'); grid on;
+xlabel('t [s]'); ylabel('q [rad]'); legend('q1','q2','q3');
+plot3(r(1,:), r(2,:), r(3,:), 'LineWidth',1.5); axis equal
+for k = 1:numel(t)                 % replay trajectory
+  abbRobot.setJointPositions(Q(:,k)); drawnow; pause(0.01);
+end
+\end{ml}
+
+% =====================================================================
+\section{Debugging Checklist}
+\begin{itemize}
+\item Frame of each vector? Write it in the name: \mc{I_r_IE}, \mc{B_w_IB}, \mc{C_IB}.
+\item Rotation composition order: $\C_{IE}=\C_{I0}\C_{01}\cdots$ (right-multiply going outward).
+\item $\bm\omega$ in $I$ vs.\ $B$: ${}_I\bm\omega=\C_{IB}\,{}_B\bm\omega$; Jacobians in exercise are in $I$.
+\item Test on random inputs (\mc{q = randn(6,1)}), tolerance \mc{1e-6}, like \mc{evaluate_problems}.
+\item Check Jacobians against \mc{numJac}; check $\M$ symmetric p.d.; check $\bb(\q,\mathbf 0)=\mathbf 0$.
+\item Singularities: \mc{rank(J)}, \mc{min(svd(J))} $\to$ use damped pinv.
+\item Symbolic slow? avoid global \mc{simplify}; use \mc{matlabFunction(...,'Optimize',true)}.
+\item Quaternion drift: re-normalise after every integration step.
+\item \mc{dbstop if error}, breakpoints, \mc{keyboard}, \mc{whos}, \mc{size(x)}.
+\end{itemize}
+
+\end{multicols*}
+\end{document}

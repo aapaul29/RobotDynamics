@@ -1,0 +1,549 @@
+% =====================================================================
+%  Robot Dynamics (151-0851-00L, HS26) -- MATLAB Cheatsheet
+%  ETH-style cheatsheet layout: A4 landscape, multi-column, compact
+% =====================================================================
+\documentclass[8pt,landscape]{extarticle}
+
+% ---------- Page & fonts ----------
+\usepackage[a4paper,landscape,margin=6mm,top=6mm,bottom=7mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{multicol}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+
+% ---------- ETH colours ----------
+\definecolor{ethblue}{HTML}{215CAF}
+\definecolor{ethpetrol}{HTML}{007894}
+\definecolor{ethgreen}{HTML}{627313}
+\definecolor{ethred}{HTML}{B7352D}
+\definecolor{ethgray}{HTML}{6F6F6F}
+\definecolor{codebg}{HTML}{F4F6FA}
+\definecolor{mlcomment}{HTML}{228B22}
+\definecolor{mlstring}{HTML}{A020F0}
+\definecolor{mlkey}{HTML}{0000FF}
+
+% ---------- Layout tweaks ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\setlength{\columnsep}{3mm}
+\setlength{\columnseprule}{0.2pt}
+\def\columnseprulecolor{\color{ethgray!50}}
+\setlist{nosep,leftmargin=*,label=\textcolor{ethblue}{\scriptsize$\blacktriangleright$}}
+\setlength{\abovedisplayskip}{1pt}\setlength{\belowdisplayskip}{1pt}
+\setlength{\abovedisplayshortskip}{0pt}\setlength{\belowdisplayshortskip}{0pt}
+\renewcommand{\arraystretch}{1.05}
+
+% Section headers: coloured bars (ETH cheatsheet style)
+\newcommand{\secbar}[1]{\colorbox{ethblue}{\parbox{\dimexpr\columnwidth-2\fboxsep}{\strut\thesection\ #1}}}
+\newcommand{\subbar}[1]{\thesubsection\ #1\ \leaders\hbox{\rule[0.5ex]{1pt}{0.3pt}}\hfill\null}
+\titleformat{\section}{\normalfont\bfseries\color{white}}{}{0pt}{\secbar}
+\titlespacing*{\section}{0pt}{3pt}{1pt}
+\titleformat{\subsection}{\normalfont\bfseries\color{ethblue}}{}{0pt}{\subbar}
+\titlespacing*{\subsection}{0pt}{2pt}{0.5pt}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+
+% Header / footer
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\tiny\color{ethgray}MATLAB Cheatsheet -- Basics, Linear Algebra, Robot Dynamics}
+\fancyfoot[C]{\tiny\color{ethgray}Indexing starts at 1 \quad Column vectors by default \quad \texttt{C\_AB}: ${}_A\mathbf r=\mathbf C_{AB}\,{}_B\mathbf r$ \quad quaternion $[w;x;y;z]$}
+\fancyfoot[R]{\tiny\color{ethgray}Aaryan -- page \thepage}
+
+% ---------- MATLAB listings ----------
+\lstdefinestyle{ml}{
+  language=Matlab,
+  basicstyle=\ttfamily\fontsize{6.2}{7}\selectfont,
+  keywordstyle=\color{mlkey},
+  commentstyle=\color{mlcomment}\itshape,
+  stringstyle=\color{mlstring},
+  backgroundcolor=\color{codebg},
+  frame=none, 
+  xleftmargin=3pt, framexleftmargin=2pt,
+  aboveskip=1pt, belowskip=1pt,
+  columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=false,
+  showstringspaces=false, upquote=true,
+  morekeywords={syms,sym,jacobian,simplify,matlabFunction,subs,diff,pinv,null,ode45,quadprog,assert,feval,skew,sgn},
+  literate={~}{{$\sim$}}1
+}
+\lstnewenvironment{ml}{\lstset{style=ml}}{}
+\newcommand{\mc}[1]{\texttt{\detokenize{#1}}}
+
+% Warning/Tip boxes
+\newtcolorbox{tip}{colback=ethgreen!8,colframe=ethgreen,boxrule=0.4pt,left=1pt,right=1pt,top=0pt,bottom=0pt,arc=0pt,fontupper=\scriptsize}
+\newtcolorbox{warn}{colback=ethred!7,colframe=ethred,boxrule=0.4pt,left=1pt,right=1pt,top=0pt,bottom=0pt,arc=0pt,fontupper=\scriptsize}
+
+% Math shortcuts
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\T}{\mathbf{T}}
+\newcommand{\J}{\mathbf{J}}
+\newcommand{\M}{\mathbf{M}}
+\newcommand{\q}{\mathbf{q}}
+\newcommand{\dq}{\dot{\mathbf{q}}}
+\newcommand{\ddq}{\ddot{\mathbf{q}}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\g}{\mathbf{g}}
+\newcommand{\bI}{\mathbb{I}}
+\newcommand{\skw}[1]{[#1]_\times}
+\newcommand{\pinv}{^{+}}
+
+\begin{document}
+\scriptsize
+\begin{multicols*}{4}
+
+\begin{tcolorbox}[colback=ethblue,colframe=ethblue,coltext=white,arc=0pt,left=2pt,right=2pt,top=1pt,bottom=1pt]
+{\bfseries\normalsize MATLAB Cheatsheet}\\
+{\tiny Basics \textbullet{} Linear Algebra \textbullet{} Robot Dynamics (151-0851-00L, HS26)}
+\end{tcolorbox}
+
+% =====================================================================
+\section{Environment \& Workspace}
+\begin{ml}
+clc                 % clear command window
+clear / clear x     % clear all / one variable
+close all           % close all figures
+clearvars -except q % keep q
+who, whos           % list variables (with size/class)
+help pinv           % short help;  doc pinv -> full docs
+which myFun         % which file is called?
+exist('x','var')    % 1 if variable x exists
+pwd, cd('..'), ls   % folders
+addpath(genpath('ex1'))   % add folder + subfolders to path
+format long / format short / format compact
+x = 3;              % ; suppresses output
+x = 3               % no ; -> prints x
+...                 % line continuation
+% comment    %% section (Ctrl+Enter runs section)
+Ctrl+C              % abort running code
+\end{ml}
+\begin{tip}Constants: \mc{pi}, \mc{Inf}, \mc{NaN}, \mc{eps} ($2.2\cdot10^{-16}$), \mc{1i} (imag.\ unit). \mc{ans} = last unassigned result.\end{tip}
+
+% =====================================================================
+\section{Creating Arrays}
+\begin{ml}
+a = 5;                    % scalar (1x1 double)
+r = [1 2 3];  r = [1, 2, 3];   % row vector 1x3
+c = [1; 2; 3];            % column vector 3x1
+c = r';                   % transpose -> column
+A = [1 2; 3 4];           % 2x2 matrix (; = new row)
+x = 0:0.1:1;              % start:step:end
+x = 1:6;                  % step 1
+x = 10:-2:0;              % descending
+x = linspace(0, 1, 50);   % 50 points incl. ends
+zeros(3), zeros(3,6), ones(2,3), eye(4)
+rand(3,1)   % U(0,1)    randn(6,1)  % N(0,1)
+randi(10,1,5)             % 5 ints in 1..10
+diag([1 2 3])             % diagonal matrix
+diag(A)                   % extract diagonal (column)
+blkdiag(A, B)             % block-diagonal
+repmat(v, 1, 4)           % tile
+[A, B]  / horzcat(A,B)    % side by side
+[A; B]  / vertcat(A,B)    % stacked
+cat(3, A, B)              % 3-D array
+[X,Y] = meshgrid(x, y);   % grids for surf/contour
+NaN(3,1), true(2), false(1,4)
+\end{ml}
+
+% =====================================================================
+\section{Size \& Indexing}
+\begin{ml}
+size(A)        % [rows cols]      size(A,1) rows
+numel(A)       % # elements       length(v) longest dim
+ndims(A), isempty(A), isrow(v), iscolumn(v)
+A(2,3)         % row 2, col 3
+A(2,:)         % whole row 2      A(:,end) last column
+A(1:2, [1 3])  % sub-block
+A(end, end)    % last element
+A(:)           % all elements as column (column-major!)
+A(5)           % linear index (column-wise counting)
+A(:,2) = [];   % delete column 2
+v(end+1) = 7;  % append
+A(A < 0) = 0;  % logical indexing
+idx = find(v > 2);          % indices where true
+[r, c] = find(A == max(A(:)));
+k = sub2ind(size(A), r, c); [r,c] = ind2sub(size(A), k);
+B = reshape(A, 3, []);      % [] = auto size
+v = v(:);                   % force column
+flip(v), fliplr(A), flipud(A), circshift(v, 1)
+\end{ml}
+\begin{warn}MATLAB stores \textbf{column-major}: \mc{A(:)} stacks columns. Indices start at \textbf{1}. \mc{T(1:3,1:3)} = rotation, \mc{T(1:3,4)} = translation.\end{warn}
+
+% =====================================================================
+\section{Operators}
+\begin{ml}
++  -             % add/sub (implicit expansion: A - v')
+*  /  \  ^       % MATRIX mult, right/left divide, power
+.* ./ .^         % ELEMENT-WISE
+'                % conjugate transpose (use .' for sym/cplx)
+== ~= < <= > >=  % relational -> logical array
+&  |  ~  xor     % element-wise logical
+&& ||            % short-circuit (scalars, in if/while)
+any(v), all(v)   % any/all true
+isequal(A, B)    % exact equality (shape + values)
+abs(a-b) < 1e-9  % float comparison with tolerance
+\end{ml}
+\begin{tip}\mc{A*B} needs inner dims to match; \mc{A.*B} needs equal (or broadcastable) sizes. \mc{A^2 = A*A} but \mc{A.^2} squares entries.\end{tip}
+
+% =====================================================================
+\section{Elementary Functions}
+\begin{ml}
+sin cos tan asin acos atan  atan2(y,x)  % radians!
+sind cosd  deg2rad rad2deg
+exp log log10 sqrt abs sign mod rem
+round(x,3)  floor ceil fix
+sum(A)       % column sums      sum(A,2)  row sums
+sum(A,'all') prod cumsum cumprod diff(v)
+mean median std var  min max
+[m, i] = max(v);          % value and index
+max(A, [], 'all'), max(A, 0)   % elementwise max with 0
+sort(v,'descend'); [s, i] = sort(v);
+unique(v), ismember(3, v), numel(find(v>0))
+norm(v)  vecnorm(A)       % column-wise 2-norms
+\end{ml}
+
+% =====================================================================
+\section{Control Flow}
+\begin{ml}
+if x > 0 && ~isempty(v)
+    ...
+elseif x == 0
+    ...
+else
+    ...
+end
+for k = 1:n            % also: for col = A (iterates cols)
+    if k == 3, continue; end
+    if done,   break;    end
+end
+while norm(e) > tol && it < maxIt
+    it = it + 1;
+end
+switch mode
+    case 'pos',        ...
+    case {'rot','ori'},...
+    otherwise,         ...
+end
+try
+    x = riskyFun();
+catch err
+    disp(err.message);
+end
+\end{ml}
+
+% =====================================================================
+\section{Functions}
+\subsection{Function file \texttt{myFun.m} (name = file name)}
+\begin{ml}
+function [y, J] = myFun(q, k)
+%MYFUN  One-line description (shown by help)
+    if nargin < 2, k = 1; end      % default argument
+    y = k*q;
+    if nargout > 1, J = k*eye(numel(q)); end
+end
+
+function h = helper(x)   % local function: same file,
+    h = 2*x;             % after the main one, private
+end
+\end{ml}
+Scripts: plain \mc{.m} without \mc{function}, share the base workspace.
+\subsection{Anonymous functions \& handles}
+\begin{ml}
+f  = @(x) x.^2 + 3*x;          % f(2) -> 10
+g  = @(x,y) x'*y;
+Rz = @(a) [cos(a) -sin(a) 0; sin(a) cos(a) 0; 0 0 1];
+h  = @myFun;   h(q)            % handle to file fn
+feval('myFun', q)              % call by name string
+fplot(f, [-2 2])
+% anonymous fns capture variables at creation time!
+\end{ml}
+\subsection{Variable arguments \& map-style calls}
+\begin{ml}
+function out = f(varargin)      % varargin{1}, ...
+    n = numel(varargin);
+end
+[a, ~] = myFun(q);              % ignore output
+arrayfun(@(k) k^2, 1:5)         % apply to each element
+arrayfun(@(k) Rz(k), [0 pi], 'UniformOutput', false)
+cellfun(@numel, {'ab','cde'})   % -> [2 3]
+\end{ml}
+
+% =====================================================================
+\section{Data Types}
+\begin{ml}
+class(x), isa(x,'double'), isnumeric, islogical
+double(x), int32(x), logical(x)
+% --- char vs string
+s1 = 'text';  s2 = "text";      % char array vs string
+[s1 ' more'],  s2 + " more",  strcat('a','b')
+num2str(pi,4), str2double('3.1'), mat2str(A)
+sprintf('q%d', 3)               % -> 'q3'
+strcmp(a, b), contains(s, 'x'), upper(s), split(s, ',')
+% --- cell arrays (heterogeneous containers)
+c = {1, 'two', [3 4 5]};
+c{3}          % content -> [3 4 5]
+c(3)          % sub-cell -> {[3 4 5]}
+c = cell(1,6);  c{k} = T_k;     % e.g. store transforms
+% --- structs
+p.m = 2.5;  p.l = [0.3 0.2];  p.name = 'link1';
+p = struct('m', 2.5, 'l', 0.3);
+p.('m'), fieldnames(p), isfield(p,'m'), rmfield(p,'m')
+links(2).m = 1.2;               % struct array
+[links.m]                       % collect field values
+% --- maps
+M = containers.Map({'a','b'}, {1, 2});  M('a')
+\end{ml}
+
+% =====================================================================
+\section{Printing \& Files}
+\begin{ml}
+disp(A)                    disp(['q = ', num2str(q')])
+fprintf('err = %.3e, it = %d\n', err, it);
+fprintf('%6.3f %6.3f %6.3f\n', A');   % prints ROWS of A
+% %d int, %f float, %.4f, %e sci, %g compact, %s string
+save('data.mat', 'q', 'T');  load('data.mat');
+S = load('data.mat');  S.q
+writematrix(A, 'A.csv');  A = readmatrix('A.csv');
+T = readtable('log.csv');  T.time
+\end{ml}
+
+% =====================================================================
+\section{Linear Algebra}
+\subsection{Products \& basic quantities}
+\begin{ml}
+A*B          % matrix product     a'*b   % dot (cols)
+dot(a,b)     cross(a,b)           % 3-vectors
+a*b'         % outer product      kron(A,B)
+A'  A.'      % transposes         A^k    % matrix power
+trace(A), det(A), rank(A), rank(A, tol)
+norm(v)      % 2-norm     norm(v,1), norm(v,Inf)
+norm(A)      % spectral   norm(A,'fro')
+cond(A)      % condition number (large -> near singular)
+triu(A), tril(A), diag(A), diag(diag(A))
+issymmetric(A), isdiag(A), istriu(A)
+\end{ml}
+\subsection{Solving linear systems}
+\begin{ml}
+x = A \ b;        % solve A x = b  (DON'T use inv(A)*b)
+X = B / A;        % solve X A = B
+x = pinv(A) * b;  % Moore-Penrose: least-squares + MIN-NORM
+x = lsqminnorm(A, b);   % min-norm LS, faster than pinv
+Ainv = inv(A);    % only if you really need the matrix
+\end{ml}
+\begin{warn}\texttt{A\textbackslash b} for a \textbf{fat} (underdetermined) $A$ returns a \emph{basic} solution with many zeros -- \textbf{not} the minimum-norm one. For redundant robots ($\mathbf J\in\mathbb R^{m\times n}$, $n>m$) use \mc{pinv(J)} / \mc{lsqminnorm}. For tall $A$, \texttt{A\textbackslash b} = least squares.\end{warn}
+\subsection{Decompositions}
+\begin{ml}
+e       = eig(A);           % eigenvalues
+[V, D]  = eig(A);           % A*V = V*D
+s       = svd(A);           % singular values (descending)
+[U,S,V] = svd(A);           % A = U*S*V'
+[U,S,V] = svd(A, 'econ');   % economy size
+[Q, R]  = qr(A);            % A = Q*R
+[L,U,P] = lu(A);            % P*A = L*U
+R       = chol(A);          % A = R'*R  (A must be SPD)
+[R, p]  = chol(A);          % p == 0  <=>  A is SPD
+N       = null(A);          % orthonormal basis of ker(A)
+O       = orth(A);          % orthonormal basis of range(A)
+expm(A), logm(A), sqrtm(A)  % matrix exp/log/sqrt
+\end{ml}
+\subsection{Useful checks}
+\begin{ml}
+all(eig((M+M')/2) > 0)          % positive definite?
+norm(C'*C - eye(3)) < 1e-9      % orthogonal?
+abs(det(C) - 1) < 1e-9          % proper rotation?
+min(svd(J))                     % distance to singularity
+sqrt(det(J*J'))                 % manipulability
+\end{ml}
+
+% =====================================================================
+\section{Symbolic Math Toolbox}
+\begin{ml}
+syms x y real                     % scalar symbols
+syms q [6 1] real                 % q1..q6 as vector q
+q = sym('q', [6 1], 'real');      % same, older versions
+syms m l g positive
+assume(x > 0)
+f   = x^2*sin(y);
+df  = diff(f, x);   d2f = diff(f, x, 2);
+J   = jacobian([f; x*y], [x; y]); % Jacobian of vector fn
+H   = hessian(f, [x; y]);
+F   = int(f, x);    F = int(f, x, 0, 1);
+f2  = simplify(f);  expand(f), collect(f, x), factor(f)
+subs(f, x, 2)                     % substitute
+subs(f, {x, y}, {1, pi})
+double(subs(f, [x y], [1 2]))     % -> numeric
+vpa(pi, 8), pretty(f), latex(f)
+sol = solve(x^2 == 4, x);         % symbolic solve
+[sx, sy] = solve([x+y==3, x-y==1], [x y]);
+taylor(sin(x), x, 'Order', 4)
+A = sym(zeros(3));                % symbolic preallocation
+% symbolic -> fast numeric function / m-file
+fh = matlabFunction(J, 'Vars', {x, y});
+matlabFunction(M, 'File','M_fun', 'Vars', {q}, ...
+               'Optimize', false);  % faster generation
+\end{ml}
+\begin{tip}Time derivative of a matrix $\mathbf A(\mathbf q)$: \mc{dA = reshape(jacobian(A(:),q)*dq, size(A))}. Avoid \mc{simplify} on huge expressions -- it can take minutes. Use \mc{.'} (not \mc{'}) or declare symbols \mc{real}, else \mc{'} conjugates.\end{tip}
+
+% =====================================================================
+\section{Numerical Methods}
+\begin{ml}
+% ODE:  dx/dt = f(t,x)
+opts = odeset('RelTol',1e-8, 'AbsTol',1e-10);
+[t, X] = ode45(@(t,x) f(t,x,p), [0 5], x0, opts);
+% X: rows = time steps, cols = states;  X(:,1) = x1(t)
+[t, X] = ode45(fh, 0:0.01:5, x0);     % fixed output grid
+% stiff: ode15s;  fixed step: write your own loop
+for k = 1:N, x = x + dt*f(t(k), x); end   % expl. Euler
+
+xr = fzero(@(x) cos(x) - x, 0.5);     % scalar root
+xs = fsolve(@(x) F(x), x0);           % nonlinear system
+xm = fminsearch(@(x) cost(x), x0);    % derivative-free
+xm = fminunc(@cost, x0);              % Optim. TB
+x  = quadprog(H, f, A, b, Aeq, beq, lb, ub);  % QP
+x  = lsqlin(C, d, A, b, Aeq, beq);    % constrained LS
+yi = interp1(t, y, ti, 'linear');     % interpolation
+I  = integral(@(x) x.^2, 0, 1);
+trapz(t, y), cumtrapz(t, y), gradient(y, dt)
+pp = polyfit(x, y, 3);  polyval(pp, xq);  roots(pp)
+\end{ml}
+\subsection{Control System Toolbox}
+\begin{ml}
+sys = ss(A, B, C, D);  tf(sys),  step(sys), bode(sys)
+K = lqr(A, B, Q, R);   eig(A - B*K)
+K = place(A, B, poles);
+rank(ctrb(A, B)), rank(obsv(A, C))
+\end{ml}
+
+% =====================================================================
+\section{Plotting}
+\begin{ml}
+figure('Name','Joints');  hold on;  grid on;
+plot(t, q(1,:), 'b-', 'LineWidth', 1.5);
+plot(t, q_d(1,:), 'r--');
+xlabel('t [s]'); ylabel('q_1 [rad]'); title('Tracking');
+legend('q','q_d','Location','best');  xlim([0 5]);
+subplot(2,1,1); ...  subplot(2,1,2); ...
+tiledlayout(2,2); nexttile; plot(...);
+plot3(x, y, z); axis equal; view(3);  % 3-D path
+scatter(x, y, 10, c, 'filled');
+quiver3(x0,y0,z0, u,v,w, 0);           % frame axes/arrows
+surf(X, Y, Z); shading interp; colorbar;
+yline(0,'k:'); xline(1);
+exportgraphics(gcf, 'fig.pdf');        % save figure
+% animation
+h = plot3(nan,nan,nan,'o-');
+for k = 1:numel(t)
+    set(h, 'XData', P(1,:,k), 'YData', P(2,:,k), 'ZData', P(3,:,k));
+    drawnow;  % pause(0.01)
+end
+\end{ml}
+
+% =====================================================================
+\section{Robot Dynamics Toolkit}
+\subsection{Rotations \& transforms}
+\begin{ml}
+skew = @(v) [0 -v(3) v(2); v(3) 0 -v(1); -v(2) v(1) 0];
+unskew = @(S) [S(3,2); S(1,3); S(2,1)];
+Rx = @(a) [1 0 0; 0 cos(a) -sin(a); 0 sin(a) cos(a)];
+Ry = @(a) [cos(a) 0 sin(a); 0 1 0; -sin(a) 0 cos(a)];
+Rz = @(a) [cos(a) -sin(a) 0; sin(a) cos(a) 0; 0 0 1];
+C_IB  = Rz(yaw)*Ry(pitch)*Rx(roll);   % ZYX Euler
+A_r   = C_AB * B_r;                   % change frame
+C_AC  = C_AB * C_BC;                  % chain
+C_BA  = C_AB';                        % inverse
+% homogeneous transforms
+T  = [C, r; 0 0 0 1];
+Ti = [C', -C'*r; 0 0 0 1];            % inverse
+p  = T * [r_B; 1];  p = p(1:3);        % map point
+C  = T(1:3,1:3);   r = T(1:3,4);
+% rotation vector <-> matrix via matrix exp/log
+C   = expm(skew(phi));                % phi = theta*n
+phi = unskew(logm(C));                % (theta < pi)
+th  = acos((trace(C)-1)/2);           % rotation angle
+% Euler angles from C (ZYX): use atan2, never atan
+yaw   = atan2(C(2,1), C(1,1));
+pitch = atan2(-C(3,1), sqrt(C(3,2)^2 + C(3,3)^2));
+roll  = atan2(C(3,2), C(3,3));
+wrap  = @(a) atan2(sin(a), cos(a));   % to (-pi,pi]
+\end{ml}
+\subsection{Quaternions $[w;\,x;\,y;\,z]$}
+\begin{ml}
+qmul = @(p,q) [p(1)*q(1) - p(2:4)'*q(2:4);
+               p(1)*q(2:4) + q(1)*p(2:4) + cross(p(2:4),q(2:4))];
+qconj = @(q) [q(1); -q(2:4)];
+q = q / norm(q);                      % normalise!
+q2C = @(q) (2*q(1)^2-1)*eye(3) + 2*q(1)*skew(q(2:4)) ...
+           + 2*q(2:4)*q(2:4)';
+\end{ml}
+\begin{tip}Robotics/Navigation TB built-ins: \mc{eul2rotm([z y x])} (default \mc{'ZYX'}), \mc{rotm2eul}, \mc{rotm2quat} (returns \emph{row} \mc{[w x y z]}), \mc{quat2rotm}, \mc{axang2rotm([n' th])}. Cross-check against your own functions -- the exercises auto-grade \emph{your} implementation.\end{tip}
+\subsection{Loops over a kinematic chain}
+\begin{ml}
+T_I = cell(1,n);  T = T_I0;
+for k = 1:n
+    T = T * T_k(q, k);            % T_{k-1,k}(q_k)
+    T_I{k} = T;                   % store T_Ik
+end
+r_IE = T_I{n}(1:3,4);
+% geometric Jacobian, revolute joints (all in I)
+J_P = zeros(3,n); J_R = zeros(3,n);
+for k = 1:n
+    n_k = T_I{k}(1:3,1:3) * axis_k(:,k);    % axis in I
+    J_P(:,k) = cross(n_k, r_IE - T_I{k}(1:3,4));
+    J_R(:,k) = n_k;
+end
+J = [J_P; J_R];
+\end{ml}
+\subsection{Finite-difference check of any Jacobian}
+\begin{ml}
+function J = numJac(f, q, h)
+    if nargin < 3, h = 1e-6; end
+    f0 = f(q); J = zeros(numel(f0), numel(q));
+    for k = 1:numel(q)
+        e = zeros(size(q)); e(k) = h;
+        J(:,k) = (f(q+e) - f(q-e)) / (2*h);
+    end
+end
+norm(numJac(@jointToPosition, q) - jointToPosJac(q))
+\end{ml}
+\subsection{Pseudo-inverse \& null-space}
+\begin{ml}
+Jp   = pinv(J);                               % J^+
+Jd   = J' / (J*J' + lambda^2*eye(size(J,1))); % damped
+N    = eye(n) - pinv(J)*J;                    % projector
+dq   = pinv(J1)*w1 + N1*pinv(J2*N1)*(w2 - J2*pinv(J1)*w1);
+\end{ml}
+\subsection{Equations of motion}
+\begin{ml}
+% M(q) ddq + b(q,dq) + g(q) = tau
+ddq = M \ (tau - b - g);                   % forward dyn.
+tau = M*ddq_des + b + g;                   % inverse dyn.
+Lam = inv(J/M*J');                         % op-space inertia
+% simulate
+rhs = @(t,x) [x(n+1:end);
+      M_fun(x(1:n)) \ (tau_fun(t,x) - b_fun(x(1:n),x(n+1:end)) - g_fun(x(1:n)))];
+[t, X] = ode45(rhs, [0 5], [q0; dq0]);
+\end{ml}
+
+% =====================================================================
+\section{Debugging \& Performance}
+\begin{ml}
+dbstop if error      % break into debugger on error
+keyboard             % manual breakpoint in code
+dbcont / dbquit      % continue / leave debugger
+size(x), class(x)    % first thing to check on errors
+assert(isequal(size(J), [6 6]), 'J has wrong size');
+tic; ...; toc        % timing
+profile on; run; profile viewer
+q = zeros(6,N);      % PREALLOCATE before loops
+y = A*x;             % vectorise instead of loops
+\end{ml}
+\begin{warn}\textbf{Common errors:} ``Dimensions of arrays being concatenated are not consistent'' $\to$ row/column mix. ``Incorrect dimensions for matrix multiplication'' $\to$ use \mc{.*} or transpose. ``Index exceeds array bounds'' $\to$ check \mc{size}. ``Undefined function'' $\to$ path/\mc{addpath}, file name $\neq$ function name.\end{warn}
+
+\end{multicols*}
+\end{document}
