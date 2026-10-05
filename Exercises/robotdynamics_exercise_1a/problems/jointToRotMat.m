@@ -4,11 +4,5 @@ function C_IE = jointToRotMat(q)
 % end-effector frame E to the inertial frame I, C_IE.
 
 % PLACEHOLDER FOR OUTPUT -> REPLACE WITH SOLUTION
-% Transformation Matrix
-T_IE = getTransformI0() * jointToTransform01(q) * jointToTransform12(q) * ...
-  jointToTransform23(q) * jointToTransform34(q) * jointToTransform45(q) * ...
-  jointToTransform56(q) * getTransform6E();
-
-% Extract Rotation Matrix
-C_IE = T_IE(1:3, 1:3);
+C_IE = zeros(3);
 end
