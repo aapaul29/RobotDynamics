@@ -5,7 +5,7 @@ function [ q ] = inverseKinematics(I_r_IE_des, C_IE_des, q_0, tol)
 
 % 0. Setup
 it = 0;
-max_it = 100;       % Set the maximum number of iterations.
+max_it = 100;       % Set the maximum number of iterations. 
 lambda = 0.001;     % Damping factor
 alpha = 0.5;        % Update rate
 
@@ -18,26 +18,22 @@ q = q_0;
 % 2. Iterate until terminating condition.
 while (it==0 || (norm(dxe)>tol && it < max_it))
     % 3. evaluate Jacobian for current q
-    I_J = [jointToPosJac_solution(q);
-        jointToRotJac_solution(q)];
+    I_J = ;
     
     % 4. Update the psuedo inverse
-    I_J_pinv = pseudoInverseMat_solution(I_J, lambda);
+    I_J_pinv = ;
     
     % 5. Find the end-effector configuration error vector
     % position error
-    I_r_IE = jointToPosition_solution(q);
-    dr = I_r_IE_des - I_r_IE;
+    dr = ; 
     % rotation error
-    C_IE = jointToRotMat_solution(q);
-    C_err = C_IE_des * C_IE';
-    dph = rotMatToRotVec_solution(C_err);
+    dph = ; 
     % pose error
-    dxe = [dr; dph];
+    dxe = ;
     
     % 6. Update the generalized coordinates
-    q = q + alpha * I_J_pinv * dxe ;
-    
+    q = ;
+     
     % Update robot
     abbRobot.setJointPositions(q);
     drawnow;
@@ -48,12 +44,9 @@ end
 
 % Get final error (as for 5.)
 % position error
-I_r_IE = jointToPosition_solution(q);
-dr = I_r_IE_des - I_r_IE;
+dr = ;
 % rotation error
-C_IE = jointToRotMat_solution(q);
-C_err = C_IE_des*C_IE';
-dph = rotMatToRotVec_solution(C_err);
+dph = ;
 
 fprintf('Inverse kinematics terminated after %d iterations.\n', it);
 fprintf('Position error: %e.\n', norm(dr));

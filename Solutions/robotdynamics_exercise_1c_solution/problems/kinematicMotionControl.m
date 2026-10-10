@@ -7,11 +7,5 @@ function [ Dq ] = kinematicMotionControl(q, r_des, v_des)
 
 % Compute the updated joint velocities. This would be used for a velocity controllable robot
 % TODO:
-K_p = 5;
-lambda = 0.1;
-
-r_current = jointToPosition_solution(q);
-J_current = jointToJac_solution(q);
-v_command = v_des + K_p * (r_des - r_current);
-Dq = pseudoInverseMat(J_current, lambda) * v_command;
+Dq = 0.1*ones(6,1);
 end
