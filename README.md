@@ -10,7 +10,8 @@ The exercises are built around the **ABB IRB120** 6-DoF industrial arm and use t
 RobotDynamics/
 ├── Exercises/        # My implementations (edit the files in problems/)
 │   ├── robotdynamics_exercise_1a/   # Forward kinematics
-│   └── robotdynamics_exercise_1b/   # Differential kinematics (Jacobians)
+│   ├── robotdynamics_exercise_1b/   # Differential kinematics (Jacobians)
+│   └── robotdynamics_exercise_1c/   # Inverse kinematics & kinematic motion control
 ├── Solutions/        # Official reference solutions for each exercise
 ├── Past Midterms/    # Midterm quizzes 2020–2024 (+ solutions where available)
 └── Cheatsheet/       # LaTeX source + PDF of my MATLAB / Robot Dynamics cheatsheet
@@ -22,10 +23,11 @@ RobotDynamics/
 |---|---|---|---|
 | 1a | Forward kinematics | `jointToTransform01`…`56`, `getTransformI0`, `getTransform6E`, `jointToPosition`, `jointToRotMat`, `jointToQuat`, `quatMult`, `quatToRotMat`, `rotMatToQuat`, `rotVecWithQuat` | ✅ |
 | 1b | Differential kinematics | `jointToPosJac`, `jointToRotJac` | ✅ |
+| 1c | Inverse kinematics | `pseudoInverseMat` (damped), `rotMatToRotVec`, `inverseKinematics`, `kinematicMotionControl` | 🚧 |
 
 ## Running an exercise
 
-Requires MATLAB (no extra toolboxes needed for the exercises). From inside an exercise folder, e.g. `Exercises/robotdynamics_exercise_1b`:
+Requires MATLAB (no extra toolboxes needed for the exercises). From inside an exercise folder, e.g. `Exercises/robotdynamics_exercise_1c`:
 
 ```matlab
 init_workspace;      % add exercise, solution and visualization folders to the path
@@ -39,6 +41,13 @@ To inspect a configuration interactively:
 loadviz;                         % creates the abbRobot object
 q = rand(6,1);                   % any 6x1 joint configuration
 abbRobot.setJointPositions(q);
+```
+
+For exercise 1c, the iterative IK and the motion controller can be run directly:
+
+```matlab
+q = inverseKinematics([0.5649; 0; 0.5509], eye(3), 0.5*ones(6,1), 1e-6);
+motion_control_visualization;    % track a trajectory with kinematicMotionControl
 ```
 
 Reference solutions are shipped as protected `.p` files (and partly as `.m` files) under each exercise's `solutions/` folder.
