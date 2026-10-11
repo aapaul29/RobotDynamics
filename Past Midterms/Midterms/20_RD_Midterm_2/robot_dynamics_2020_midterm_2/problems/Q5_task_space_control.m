@@ -37,12 +37,6 @@ T_IC = T_IC_fun(q); % Homogeneous transformation from frame C to frame I
 I_r_IC = T_IC(1:3, 4);
 
 %% Compute torque
-I_J_C = I_J_C(1:3,1:3);
-I_dJ_C = I_dJ_C(1:3,1:3);
-chi_err = I_r_ICd - I_r_IC;
-w = I_r_IC;
-w_dot = kp*chi_err - kd*w;
-q_dot_dot = inv(I_J_C)*(w_dot-I_dJ_C*dq);
-tau = M_fun_solution(q)*q_dot_dot + b_fun_solution(q, dq) + g_fun_solution(q);
+tau = zeros(3,1); % TODO: Implement tau here
 
 end

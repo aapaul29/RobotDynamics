@@ -22,24 +22,7 @@ q0 = q(1);
 q1 = q(2);
 q2 = q(3);
 
-
-
-T_IB = [1 0 0 0;
-    0 1 0 q0;
-    0 0 1 l02;
-    0 0 0 1];
-T_BP1 = [1 0 0 0;
-    0 cos(q1) -sin(q1) l01;
-    0 sin(q1) cos(q1) 0;
-    0 0 0 1];
-T_P1P2 = [1 0 0 0;
-    0 cos(q2) -sin(q2) 0;
-    0 sin(q2) cos(q2) l11;
-    0 0 0 1];
-T_P2G = [1 0 0 0;
-    0 cos(-pi/2) -sin(-pi/2) l22;
-    0 sin(-pi/2) cos(-pi/2) l21;
-    0 0 0 1];
-T_IG = T_IB*T_BP1*T_P1P2*T_P2G;
+% Implement your solution here ...
+T_IG = zeros(4,4);
 
 end

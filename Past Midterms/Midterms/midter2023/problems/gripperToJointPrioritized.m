@@ -27,15 +27,7 @@ q3 = q(4);
 % Pseudo-inverse damping coefficient
 lambda = 1e-2;
 
-J1 = jointTo2DGripperJacobian_solution(q,params);
-J1_pseud_inv = pseudoInverseMat_solution(J1, lambda); % 4x3
-q1_des = J1_pseud_inv*w_IE_des_I;
+% Implement your solution here...
+q_dot_des = zeros(4,1);
 
-N = eye(4)-(J1_pseud_inv)*J1;
-
-J2 = [0 0 0 0;0 0 1 0; 0 0 0 1];
-w2_des = [0;0;0];
-temp = pseudoInverseMat_solution(J2*N, lambda);
-q2_des = temp*(w2_des-J2*J1_pseud_inv*w_IE_des_I);
-q_dot_des = q1_des+N*q2_des;
 end
