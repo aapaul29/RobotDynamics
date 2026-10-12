@@ -23,6 +23,6 @@ q1 = q(2);
 q2 = q(3);
 
 % Implement your solution here...
-J_IG_r = zeros(3,3);
+J_IG_r = [zeros(3, 1), [1; 0; 0], [1; 0; 0]];
 
 end
