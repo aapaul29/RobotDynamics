@@ -23,6 +23,8 @@ q5 = q(6);
 
 
 % Implement your solution here...
-J_IT_r = zeros(3,6);
+J_IT_r = [0, 0, 0, 0, 0, 0;
+    0, 0, 0, 0, 0, 0;
+    0, 0, 1, 1, 1, 1];
 
 end
