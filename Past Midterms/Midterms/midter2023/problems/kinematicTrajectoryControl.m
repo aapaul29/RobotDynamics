@@ -28,6 +28,33 @@ q3 = q(4);
 lambda = 1e-3;
 
 % Implement your solution here...
-q_dot_cmd = zeros(4,1);
+% Feedback gain on the pose error
+K = 20;
+
+% --- Step 1: object target -> gripper target ---
+% phi is measured from z_I, rotating about y_I: z_E in (x_I, z_I) = [sin(phi); cos(phi)]
+% (q1 + q2 + q3 is measured from z_0 = -z_I, hence phi = q1 + q2 + q3 + pi)
+phi_des = p_IO_des_I(3);
+z_E_des = [sin(phi_des); cos(phi_des)];
+
+% O is offset by l7 along z_E, so walk back from O to E
+r_IE_des = p_IO_des_I(1:2) - l7 * z_E_des;
+p_IE_des = [r_IE_des; phi_des];
+
+% Rigid grasp with zero desired angular velocity -> gripper twist = object twist
+w_IE_des = w_IO_des_I;
+
+% --- Step 2: track the gripper target ---
+% Current gripper pose
+r_IE = jointTo2DGripperPosition_solution(q, params);
+phi = q1 + q2 + q3 + pi;
+p_IE = [r_IE(:); phi];
+
+% Jacobian and its damped pseudo-inverse
+J = jointTo2DGripperJacobian_solution(q, params);
+J_pinv = pseudoInverseMat_solution(J, lambda);
+
+% Feedforward twist + proportional feedback on the pose error
+q_dot_cmd = J_pinv * (w_IE_des + K * (p_IE_des - p_IE));
 
 end

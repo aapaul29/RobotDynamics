@@ -28,6 +28,19 @@ q3 = q(4);
 lambda = 1e-2;
 
 % Implement your solution here...
-q_dot_des = zeros(4,1);
+% Get Jacobian of Task 1
+J_1 = jointTo2DGripperJacobian_solution(q, params);
+% Pseudo Inverse
+J_1_psinv = pseudoInverseMat_solution(J_1, lambda);
+% Nullspace of J_1
+N_1 = eye(4) - J_1_psinv * J_1;
+% Task 2
+J_2 = [0, 0, 1, 0;
+    0, 0, 0, 1];
+w_2_des = [0; 0];
+
+
+% Compute q_dot_des
+q_dot_des = J_1_psinv * w_IE_des_I + N_1 * pseudoInverseMat_solution(J_2 * N_1, lambda) * (w_2_des -J_2 * J_1_psinv * w_IE_des_I);
 
 end
