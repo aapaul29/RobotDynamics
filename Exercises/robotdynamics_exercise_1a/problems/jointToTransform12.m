@@ -3,5 +3,6 @@ function T12 = jointToTransform12(q)
 % Output: homogeneous transformation Matrix from frame 2 to frame 1. T_12
 
 % PLACEHOLDER FOR OUTPUT -> REPLACE WITH SOLUTION
+C_12 = []
 T12 = zeros(4);
 end

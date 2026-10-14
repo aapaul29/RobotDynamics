@@ -26,8 +26,17 @@ function [ J_I8_r ] = jointToRotationJacobian(q, params)
   q7 = q(8);
   
   % Implement your solution here...
+  % Normal vectors
+  n0 = [0; 1; 0];
+  n1 = [0; 0; 1];
+  n2 = [1; 0; 0];
+  n3 = [1; 0; 0];
+  n4 = [1; 0; 0];
+  n5 = [1; 0; 0];
+  n6 = [1; 0; 0];
+  n7 = [1; 0; 0];
 
-  J_I8_r = [];
+  J_I8_r = [zeros(3, 1), zeros(3, 1), n2, zeros(3, 1), n4, zeros(3, 1), n6, zeros(3, 1)];
   
 end
 
