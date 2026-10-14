@@ -13,26 +13,34 @@ K_p = 10;
 % Pseudo_inverse damping coefficient
 lambda = 1e-2;
 
-% Compute the current base Jacobian
-J_base = jointToBaseJacobian_solution(q, params);  % Base Jacobian (3x6)
+% Gerneralized coordinates
+q0  = q(1);
+q1 = q(2);
+q2 = q(3);
+q3 = q(4);
+q4 = q(5);
+q5 = q(6);
 
-% Compute the current tray Jacobian
-J_tray = jointToTrayJacobian_solution(q, params);  % Tray Jacobian (3x6)
+% Current Base position
+r_curr = [q0; q1; q2];
 
-% Desired base velocities (tracking the desired pose)
-% Desired base pose: [Ix_IB, Iy_IB, Iphi_IB]
-desired_base_vel = K_p * (p_base_des - q(1:3));
+% Base position Error
+r_err = p_base_des - r_curr;
 
-% Set desired tray velocities to zero (keeping the tray stationary)
-desired_tray_vel = [0; 0; 0];  % Zero linear and angular velocity at the tray
+% Base Jacobian
+J_IB = jointToBaseJacobian_solution(q, params);
 
-% Concatenate desired velocities
-desired_vel = [desired_base_vel; desired_tray_vel];
+% Tray Jacobian
+J_IT = jointToTrayJacobian_solution(q, params);
 
-% Construct the augmented Jacobian to minimize both base and tray movement
-J_augmented = [J_base; J_tray];  % Augmented Jacobian (6x6)
+% Task Jacobian
+J_task = [J_IB; J_IT];
 
-% Compute joint velocities using the damped pseudo-inverse
-Dq = pseudoInverseMat_solution(J_augmented, lambda) * desired_vel;
+%pseudo Inverse
+J_task_pinv = pseudoInverseMat_solution(J_task, lambda);
+
+Dq = J_task_pinv * [K_p * r_err; 0; 0; 0];
+
+
 
 end

@@ -11,25 +11,20 @@ function [ C_IC ] = cameraFrameOrientationWithBaseRotation(qW, qX, qY, qZ, q, pa
 %         not fixed.
 
 
-q_I0 = [qW; qX; qY; qZ];
-T_0C = T_0C_solution(q, params);
-C_0C = T_0C(1:3,1:3);
-quat_w = q_I0(1);
-
-% Extract the vector part.
-quat_n = q_I0(2:4);
-
-% Map the unit quaternion to a rotation matrix.
-C_IO = (2*quat_w^2-1)*eye(3) + 2.0*quat_w*skewMatrix(quat_n) + 2.0*(quat_n*quat_n');
-
 
 % implement your solution here ...
-C_IC = C_IO*C_0C;
+% Find C_I0
+C_I0 = [(qW^2 + qX^2 - qY^2 - qZ^2), (2* qX *qY - 2 * qW * qZ), (2 * qW * qY + 2 * qX * qZ);
+    (2 * qW * qZ + 2 * qX * qY), (qW^2 - qX^2 + qY^2 - qZ^2), (2 * qY * qZ - 2 * qW * qX);
+    (2 * qX * qZ - 2 * qW * qY), (2 * qW * qX + 2 * qY * qZ), (qW^2 - qX^2 - qY^2 + qZ^2)];
 
-end
 
-function A = skewMatrix(q_n)
-A = [0, -q_n(3), q_n(2);...
-    q_n(3), 0, -q_n(1);...
-    -q_n(2), q_n(1), 0];
+
+% Extract C_0C
+T_0C = T_0C_solution(q, params);
+C_0C = T_0C(1:3, 1:3);
+
+% Compute C_IC
+C_IC = C_I0 * C_0C;
+
 end

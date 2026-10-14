@@ -1,5 +1,5 @@
 function [ q ] = inverseKinematics(I_r_IC_des, q_0, tol, params)
-% Input: 
+% Input:
 % I_r_IC_des: 3x1 desired position of the point C
 % q_0: 3x1 initial guess for joint angles
 % tol: 1x1 tolerance to use as termination criterion
@@ -12,35 +12,29 @@ function [ q ] = inverseKinematics(I_r_IC_des, q_0, tol, params)
 
 % 0. Setup
 it = 0;
-max_it = params.max_it;       % Set the maximum number of iterations. 
+max_it = params.max_it;       % Set the maximum number of iterations.
 lambda = params.lambda;       % Damping factor
 alpha = params.alpha;         % Update rate
 
-% 1. start configuration
+% Implement your solution here...
 q = q_0;
-
-dxe = Inf; % Valore grande per forzare la prima iterazione
-
-% 2. Iterate until terminating condition.
-while (it==0 || (norm(dxe)>tol && it < max_it))
-    % 3. evaluate Jacobian for current q
-    I_J = jointToPositionJacobian_solution(q,params);
-
-    % 4. Update the psuedo inverse
-    I_J_pinv = pseudoInverseMat_solution(I_J,lambda);
-
-    % 5. Find the end-effector configuration error vector
-    % position error
-    dr = I_r_IC_des-jointToCameraPosition_solution(q, params);
-   
-    dxe = [dr];
-
-    % 6. Update the generalized coordinates
-    q =q+alpha*I_J_pinv*dxe ;
-
-
-    it = it+1;
+% Iterative IK
+while (it == 0 || (norm(dr) > tol && it < max_it))
+    % evaluate Jacobian at current q
+    J = jointToPositionJacobian_solution(q, params);
+    
+    % Compute pseudoInverse of current Jacobian
+    J_psinv = pseudoInverseMat_solution(q, params);
+    
+    % Position Error
+    I_r_IC = jointToCameraPosition_solution(q, params);
+    dr = I_r_IC_des - I_r_IC;
+    
+    % Update q
+    q = q + J_psinv * dr * alpha;
+    
+    % continue iteration
+    it = it + 1;
 end
-
 
 end

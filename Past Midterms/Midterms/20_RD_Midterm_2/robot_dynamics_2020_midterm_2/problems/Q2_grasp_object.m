@@ -47,28 +47,19 @@ g = g_fun_solution(q); % Gravity term
 %% Compute mass matrix
 fprintf('Adapt mass matrix M... ');
 %TODO: Implement M = ...;
-M = M + ...
-        I_Jp{3}'*params.m_o*I_Jp{3} + ...
-        I_Jr{3}'*R_Ik{3}*params.E_I_o*R_Ik{3}'*I_Jr{3};
+
 fprintf('done!\n');
 
 %% Compute gravity terms
 fprintf('Computing gravity vector g... ');
 %TODO: Implement g = ...;
-g = g - ...
-        I_Jp{3}'*params.m_o*I_g_acc;
+
 fprintf('done!\n');
 
 %% Compute nonlinear terms
 fprintf('Computing coriolis and centrifugal vector b and simplifying... ');
 %TODO: Implement b = ...;
-    I_dJp = dAdt(I_Jp{3},q,dq);
-    I_dJr = dAdt(I_Jr{3},q,dq);
-    I_omega = I_Jr{3}*dq;
-    b = b + ...
-        I_Jp{3}'*params.m_o*I_dJp*dq + ...
-        I_Jr{3}'*R_Ik{3}*params.E_I_o*R_Ik{3}'*I_dJr*dq + ...
-        I_Jr{3}'*cross(I_omega,(R_Ik{3}*params.E_I_o*R_Ik{3}'*I_omega));
+
 fprintf('done!\n');
 
 %% Store the expressions

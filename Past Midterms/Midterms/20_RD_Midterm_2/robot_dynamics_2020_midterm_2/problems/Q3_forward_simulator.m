@@ -32,7 +32,6 @@ g = g_fun_solution(q); 		% Gravity term
 
 %% Compute generalized acceleration of the system
 ddq = zeros(3, 1); % TODO
-ddq = inv(M)*(tau - g - b);
 
 %% Forward Integration  !!NOTE: Do not modify this part.!!
 gc_next.dq = (dq + ddq * params.simulation_dt);

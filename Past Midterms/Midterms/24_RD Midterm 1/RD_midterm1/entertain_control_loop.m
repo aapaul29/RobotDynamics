@@ -7,7 +7,7 @@ clear params;
 init_workspace; % also initializes params
 
 % Set to 0 to test your own solution, set to 1 to see how the solution should look like
-use_solution = 0;
+use_solution = 1;
 
 %% Control Loop
 track_entertain_trajectory(use_solution, params);

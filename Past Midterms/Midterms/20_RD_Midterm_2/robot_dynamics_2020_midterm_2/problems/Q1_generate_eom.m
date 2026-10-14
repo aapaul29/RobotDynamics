@@ -38,37 +38,21 @@ eom.b = sym(zeros(3,1));
 fprintf('Computing mass matrix M... ');
 M = sym(zeros(3,3));
 %TODO: Implement M = ...;
-for k = 1:length(q)
-    M = M + ...
-        I_Jp{k}'*m{k}*I_Jp{k} + ...
-        I_Jr{k}'*R_Ik{k}*k_I_s{k}*R_Ik{k}'*I_Jr{k};
-end
+
 fprintf('done!\n');
 
 %% Compute gravity terms
 fprintf('Computing gravity vector g... ');
 g = sym(zeros(3,1));
 %TODO: Implement g = ...;
-for k = 1:length(q)
-    g = g - ...
-        I_Jp{k}'*m{k}*I_g_acc;
-end
+
 fprintf('done!\n');
 
 %% Compute nonlinear terms
 fprintf('Computing coriolis and centrifugal vector b and simplifying... ');
 b = sym(zeros(3,1));
 %TODO: Implement b = ...;
-for k = 1:length(q)
-    I_dJp = dAdt(I_Jp{k},q,dq);
-    I_dJr = dAdt(I_Jr{k},q,dq);
-    I_omega = I_Jr{k}*dq;
-    b = b + ...
-        I_Jp{k}'*m{k}*I_dJp*dq + ...
-        I_Jr{k}'*R_Ik{k}*k_I_s{k}*R_Ik{k}'*I_dJr*dq + ...
-        I_Jr{k}'*cross(I_omega,(R_Ik{k}*k_I_s{k}*R_Ik{k}'*I_omega));
-        
-end
+
 fprintf('done!\n');
 
 %% Store the expressions
