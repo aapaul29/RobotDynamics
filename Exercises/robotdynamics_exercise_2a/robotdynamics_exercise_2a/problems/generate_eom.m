@@ -30,6 +30,9 @@ eom.hamiltonian = sym(zeros(1,1));
 fprintf('Computing mass matrix M... ');
 % TODO: Implement M = ...;
 M = sym(zeros(6,6));
+for k = 1:length(phi)
+    M = M + m{k} * I_Jp_s{k}' * I_Jp_s{k} + I_Jr{k}' * R_Ik{k} * k_I_s{k} * R_Ik{k} * I_Jr{k};
+end
 fprintf('done!\n');
 
 
@@ -37,6 +40,9 @@ fprintf('done!\n');
 fprintf('Computing gravity vector g... ');
 % TODO: Implement g = ...;
 g = sym(zeros(6,1));
+for k = 1:length(phi)
+    g = g - I_Jp_s{k}' * m{k} * I_g_acc;
+end
 fprintf('done!\n');
 
 
@@ -44,15 +50,28 @@ fprintf('done!\n');
 fprintf('Computing coriolis and centrifugal vector b and simplifying... ');
 % TODO: Implement b = ...;
 b = sym(zeros(6,1));
+for k=1:length(phi)
+    dJp_s = simplify(dAdt(jac.I_Jp_s{k},gen_cor.phi, gen_cor.dphi));
+    dJr_s = simplify(dAdt(jac.I_Jr{k},gen_cor.phi, gen_cor.dphi));
+    omega_i = simplify(jac.I_Jr{k}*gen_cor.dphi);
+    I_sk = simplify(R_Ik{k} * k_I_s{k} * R_Ik{k}');
+    
+    b = b + simplify(I_Jp_s{k}' * m{k} * dJp_s * dphi) + ...
+        simplify(I_Jr{k}' * I_sk * dJr_s * dphi) + ...
+        simplify(I_Jr{k}' * cross( omega_i , I_sk * omega_i));
+end
 fprintf('done!\n');
 
 
 %% Compute energy
 fprintf('Computing total energy... ');
 % TODO: Implement hamiltonian, enPot, enKin = ...;
-hamiltonian = sym(zeros(1,1));
-enPot = sym(zeros(1,1));
-enKin = sym(zeros(1,1));
+enPot = sym(0);
+for k=1:length(phi)
+    enPot = enPot + m{k} * I_g_acc' * [eye(3) zeros(3, 1)] * T_Ik{k} * [k_r_ks{k};1];
+end
+enKin = 0.5 * dphi' * M * dphi;
+hamiltonian = enKin - enPot;
 fprintf('done!\n');
 
 
