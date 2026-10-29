@@ -31,7 +31,20 @@ fprintf('Computing mass matrix M... ');
 % TODO: Implement M = ...;
 M = sym(zeros(6,6));
 for k = 1:length(phi)
-    M = M + m{k} * I_Jp_s{k}' * I_Jp_s{k} + I_Jr{k}' * R_Ik{k} * k_I_s{k} * R_Ik{k} * I_Jr{k};
+    M = M + m{k} * I_Jp_s{k}' * I_Jp_s{k} + I_Jr{k}' * R_Ik{k} * k_I_s{k} * R_Ik{k}' * I_Jr{k};
+end
+% Use symmetry of M matrix to make computation time shorter
+fprintf('simplifying... ');
+for k = 1:length(phi)
+    for h = k:length(phi)
+        m_kh = simplify(M(k,h));
+        if h == k
+            M(k,h) = m_kh;
+        else
+            M(k,h) = m_kh;
+            M(h,k) = m_kh;
+        end
+    end
 end
 fprintf('done!\n');
 
@@ -68,10 +81,10 @@ fprintf('Computing total energy... ');
 % TODO: Implement hamiltonian, enPot, enKin = ...;
 enPot = sym(0);
 for k=1:length(phi)
-    enPot = enPot + m{k} * I_g_acc' * [eye(3) zeros(3, 1)] * T_Ik{k} * [k_r_ks{k};1];
+    enPot = enPot - m{k} * I_g_acc' * [eye(3) zeros(3, 1)] * T_Ik{k} * [k_r_ks{k};1];
 end
 enKin = 0.5 * dphi' * M * dphi;
-hamiltonian = enKin - enPot;
+hamiltonian = enKin + enPot;
 fprintf('done!\n');
 
 
