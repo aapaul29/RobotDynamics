@@ -5,7 +5,7 @@ function [gc_next, ddq] = Q3_forward_simulator(gc, tau, params)
 %   - tau       : Current joint torques (3x1)
 %   - gc        : Current generalized coordinates (q, dq)
 %   - params    : Struct with parameters
-%   
+%
 % Output:
 %   - gc_next   : Forward simulated generalized coordinates (q, dq)
 %   - ddq       : Generalized accelerations (3x1) for the current simulation step.
@@ -31,7 +31,7 @@ b = b_fun_solution(q, dq); 	% Nonlinear term
 g = g_fun_solution(q); 		% Gravity term
 
 %% Compute generalized acceleration of the system
-ddq = zeros(3, 1); % TODO
+ddq = M \ (tau - b - g); % TODO
 
 %% Forward Integration  !!NOTE: Do not modify this part.!!
 gc_next.dq = (dq + ddq * params.simulation_dt);

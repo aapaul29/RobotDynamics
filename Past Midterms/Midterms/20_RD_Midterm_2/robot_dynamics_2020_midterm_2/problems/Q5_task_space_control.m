@@ -37,6 +37,45 @@ T_IC = T_IC_fun(q); % Homogeneous transformation from frame C to frame I
 I_r_IC = T_IC(1:3, 4);
 
 %% Compute torque
-tau = zeros(3,1); % TODO: Implement tau here
+
+% Step 1: Choose the task Jacobian.
+% The task only specifies linear camera motion, so we keep the 3 position
+% rows and ignore the rotational rows in I_J_C. J maps joint velocities to
+% the camera's linear velocity: v = J * dq.
+J = I_Jp_C;      % (3x3)
+dJ = I_dJp_C;    % (3x3)
+
+% Step 2: Compute the acceleration we want the camera to have.
+% Feedforward (I_a_Cd) makes it follow the planned motion, and the PD terms
+% correct any position and velocity errors. The current camera velocity
+% comes from the Jacobian.
+I_v_C = J * dq;
+I_a_C_cmd = I_a_Cd + kp * (I_r_ICd - I_r_IC) + kd * (I_v_Cd - I_v_C);
+
+% Step 3: Project the dynamics into task space.
+% Differentiating v = J * dq gives a = J * ddq + dJ * dq. Substituting
+% ddq = M^-1 * (tau - b - g) with tau = J' * F gives
+%   Lambda * a + mu + p = F
+% which is M * ddq + b + g = tau, written for the camera instead of the joints.
+%
+% Lambda: end-effector inertia, the mass the camera "feels" (3x3).
+% J / M means J * inv(M), computed without forming the inverse. The damped
+% pseudo-inverse keeps Lambda bounded when J * inv(M) * J' is near singular.
+damping = 1e-3;
+Lambda = pseudoInverseMat(J / M * J', damping);
+
+% mu: Coriolis and centrifugal terms seen at the camera (3x1).
+% The -dJ * dq part removes the acceleration the camera already has from
+% the joints' motion.
+mu = Lambda * (J / M * b - dJ * dq);
+
+% p: gravity seen at the camera (3x1).
+p = Lambda * (J / M * g);
+
+% Step 4: Compute the force at the camera, then map it to joint torques.
+% F = Lambda * a + mu + p is the force needed for the commanded acceleration.
+% J' maps a Cartesian force to joint torques, as in virtual work.
+I_F_C = Lambda * I_a_C_cmd + mu + p;
+tau = J' * I_F_C;
 
 end

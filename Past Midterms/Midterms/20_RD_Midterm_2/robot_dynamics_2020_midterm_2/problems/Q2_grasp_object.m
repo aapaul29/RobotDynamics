@@ -10,7 +10,7 @@ function eom = Q2_grasp_object(gc, kin, params, jac)
 %   - kin       : Struct containing symbolic expresses for the kinematics
 %   - params    : Struct with parameters
 %   - jac       : Struct containing symbolic expresses for the jacobians
-%   
+%
 % Output:
 %   - eom       : Struct with fields {M, b, g}, implementing the system
 %   dynamics with the grasped object
@@ -47,19 +47,22 @@ g = g_fun_solution(q); % Gravity term
 %% Compute mass matrix
 fprintf('Adapt mass matrix M... ');
 %TODO: Implement M = ...;
-
+M = M + I_Jp_E' * object_m * I_Jp_E + I_Jr_E' * R_IE * object_I * R_IE' * I_Jr_E;
 fprintf('done!\n');
 
 %% Compute gravity terms
 fprintf('Computing gravity vector g... ');
 %TODO: Implement g = ...;
-
+g = g - I_Jp_E' *object_m* I_g_acc;
 fprintf('done!\n');
 
 %% Compute nonlinear terms
 fprintf('Computing coriolis and centrifugal vector b and simplifying... ');
 %TODO: Implement b = ...;
-
+Omega = I_Jr_E * dq;
+I_inertia = R_IE * object_I * R_IE';
+b = b + I_Jp_E' * object_m * dAdt(I_Jp_E, q, dq) * dq + I_Jr_E' * (I_inertia * dAdt(I_Jr_E,q,dq) *dq + cross(Omega, I_inertia * Omega));
+b = simplify(b);
 fprintf('done!\n');
 
 %% Store the expressions
