@@ -26,6 +26,6 @@ kd = params.kd_joint; % D gain matrix for joints (3x3 diagonal matrix)
 % configuration.
 
 %% Compute torque
-tau = zeros(3,1); % TODO: Implement tau here
+tau = kp*(q_des - q) + kd * (dq_des - dq) + g; % TODO: Implement tau here
 
 end

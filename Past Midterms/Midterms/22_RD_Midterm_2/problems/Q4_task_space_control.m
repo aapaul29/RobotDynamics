@@ -40,22 +40,38 @@ I_F_G = zeros(6,1); % Desired end-effector force in inertial frame
 I_F_G(2) = I_F_Gy; % Normal force
 
 %% Project the joint-space dynamics to the task space
-% Note: use pseudoInverseMat() function for lambda for stability 
-
+% Note: use pseudoInverseMat() function for lambda for stability
 % TODO: Implement end-effector dynamics
-lambda = pseudoInverseMat(zeros(6,6));
-mu = zeros(6,1);
-p =  zeros(6,1);
+JMinv = I_J_G / M;
+lambda = pseudoInverseMat(JMinv*I_J_G');
+mu = lambda * JMinv *b - lambda * I_dJ_G * dq;
+p =  lambda * JMinv * g;
 
 %% Compute torque
-% TODO: Implement task-space 
+% TODO: Implement task-space
 % Note: desired angular velocity & acceleration are zero.
 
 % Gains !!! Please do not modify these gains !!!
 kp = params.kp_task; % P gain matrix for gripper position (6x6 diagonal matrix)
 kd = params.kd_task; % D gain matrix for gripper velocity  (6x6 diagonal matrix)
+% Orientation error
+C_err = C_IGd * T_IG(1:3, 1:3)';
+orientation_error = rotMatToRotVec(C_err);
+%Parametrization error
+chi_err = [I_r_IGd - I_r_IG; orientation_error];
+dchi_err = [I_v_Gd;zeros(3, 1)] - I_J_G * dq;
+dw_e = [zeros(3,1); zeros(3,1)] + kp * chi_err + kd * dchi_err;
+%Selection matrices
+sigma_p = diag([1.0, 0.0, 1.0]);
+sigma_r = diag([1.0,1.0,1.0]);
+SM = [sigma_p, zeros(3);
+    zeros(3), sigma_r];
+SF = [eye(3) - sigma_p, zeros(3);
+    zeros(3), (eye(3) - sigma_r)];
+%desired Force
+I_F_des = lambda * SM * dw_e + SF * I_F_G + mu + p;
 
-tau = zeros(3, 1);  % TODO: Implement tau
+tau = I_J_G' * I_F_des;  % TODO: Implement tau
 
 %% Return for evaluation
 dyn.lambda =lambda;
