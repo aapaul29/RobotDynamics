@@ -1,5 +1,5 @@
 function [ tau ] = control_op_space_hybrid( I_r_IE_des, eul_IE_des, q, dq, I_F_E_x )
-% CONTROL_OP_SPACE_HYBRID Operational-space inverse dynamics controller 
+% CONTROL_OP_SPACE_HYBRID Operational-space inverse dynamics controller
 % with a PD stabilizing feedback term and a desired end-effector force.
 %
 % I_r_IE_des --> a vector in R^3 which describes the desired position of the
@@ -26,6 +26,9 @@ I_dJ_e = I_dJe_fun_solution(q, dq);
 T_IE = T_IE_fun_solution(q);
 I_r_IE = T_IE(1:3, 4);
 C_IE = T_IE(1:3, 1:3);
+M = M_fun_solution(q);
+b = b_fun_solution(q, dq);
+g = g_fun_solution(q);
 
 % Define error orientation using the rotational vector parameterization.
 C_IE_des = eulAngXyzToRotMat(eul_IE_des);
@@ -34,21 +37,24 @@ orientation_error = rotMatToRotVec_solution(C_err);
 
 % Define the pose error.
 chi_err = [I_r_IE_des - I_r_IE;
-           orientation_error];
+    orientation_error];
 
 % Project the joint-space dynamics to the operational space
 % TODO
-% lambda = ... ;
-% mu = ... ;
-% p =  ... ;
+lambda = pseudoInverseMat_solution(I_Je * inv(M) * I_Je', 0.01);
+mu = lambda * I_Je * inv(M) * b - lambda * I_dJ_e  *  dq;
+p = lambda * I_Je * inv(M) * g ;
 
 % Define the motion and force selection matrices.
 % TODO
-% Sm = ... ;
-% Sf = ... ;
+Sm = eye(6);
+Sm(1,1) = 0 ;
+Sf = eye(6)-Sm ;
 
 % Design a controller which implements the operational-space inverse
 % dynamics and exerts a desired force.
-tau = zeros(6,1); % TODO
+dchi_err = zeros(6, 1) - I_Je * dq;
+I_F_E_des = lambda * Sm * (kpMat * chi_err + kdMat * dchi_err) + Sf * I_F_E + mu + p;
+tau = I_Je' * I_F_E_des; % TODO
 
 end

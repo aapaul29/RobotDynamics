@@ -1,5 +1,5 @@
 function [ tau ] = control_inv_dyn(I_r_IE_des, eul_IE_des, q, q_dot)
-% CONTROL_INV_DYN Operational-space inverse dynamics controller with a PD 
+% CONTROL_INV_DYN Operational-space inverse dynamics controller with a PD
 % stabilizing feedback term.
 %
 % I_r_IE_des --> a vector in R^3 which describes the desired position of the
@@ -22,6 +22,9 @@ I_dJ_e = I_dJe_fun_solution(q, q_dot);
 T_IE = T_IE_fun_solution(q);
 I_r_Ie = T_IE(1:3, 4);
 C_IE = T_IE(1:3, 1:3);
+M = M_fun_solution(q);
+b = b_fun_solution(q, q_dot);
+g = g_fun_solution(q);
 
 % Define error orientation using the rotational vector parameterization.
 C_IE_des = eulAngXyzToRotMat(eul_IE_des);
@@ -30,10 +33,13 @@ orientation_error = rotMatToRotVec_solution(C_err);
 
 % Define the pose error.
 chi_err = [I_r_IE_des - I_r_Ie;
-           orientation_error];
+    orientation_error];
 
 % PD law, the orientation feedback is a torque around error rotation axis
 % proportional to the error angle.
-tau = zeros(6, 1); % TODO
+w = I_J_e * q_dot;
+dw = kpMat * chi_err - kdMat * w;
+ddq = pseudoInverseMat_solution(I_J_e, 0.1) * (dw - I_dJ_e * q_dot);
+tau = M * ddq + b + g;
 
 end
