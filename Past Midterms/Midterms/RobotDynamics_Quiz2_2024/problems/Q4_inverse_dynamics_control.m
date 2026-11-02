@@ -43,7 +43,26 @@ I_r_IT = eval(subs(kin.I_r_IT, {'q0' 'q1' 'q2' 'q3' 'q4' 'q5'}, {gc.q(1) gc.q(2)
 kp = params.kp_task; % P gain matrix for object position (6x6 diagonal matrix)
 kd = params.kd_task; % D gain matrix for object velocity  (6x6 diagonal matrix)
 
-% TODO
-tau = zeros(6,1);
+%Errors
+positional_error = I_r_ITd - I_r_IT;
+C_err = C_ITd * R_IT';
+orientation_error = rotMatToRotVec(C_err);
+dchi_err = [positional_error; orientation_error];
+
+% Current tray twist; desired angular velocity is zero to limit tray rotation
+I_w_T = I_J_T * dq;
+w_err = [I_v_Td - I_w_T(1:3); -I_w_T(4:6)];
+
+% Desired task-space acceleration (no feedforward acceleration given)
+dw_des = kp * dchi_err + kd * w_err;
+
+% Wrench compensating the external force along x of frame I
+F_ext = [I_F_Txd; 0; 0; 0; 0; 0];
+
+% Desired joint accelerations from the task-space acceleration
+ddq_des = pseudoInverseMat(I_J_T) * (dw_des - I_dJ_T*dq);
+
+% Inverse dynamics plus mapping of the compensating force to joint space
+tau = M*ddq_des + b + g + I_J_T' * F_ext;
 
 end

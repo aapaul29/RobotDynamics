@@ -10,7 +10,7 @@ function eom = Q1_generate_eom(gc, kin, params, jac)
 %   - kin       : Struct containing symbolic expresses for the kinematics
 %   - params    : Struct with parameters
 %   - jac       : Struct containing symbolic expresses for the jacobians
-%   
+%
 % Output:
 %   - eom       : Struct with fields {M, b, g}, implementing the system dynamics
 %
@@ -41,10 +41,11 @@ fprintf('Computing mass matrix M... ');
 M = sym(zeros(6,6));  % this accounts for the full body
 
 for k = 1:num_bodies
-    
-    % TODO: implement here
-
+    I_I_s = R_Ik{k} * k_I_s{k} * R_Ik{k}';
+    M = M + I_Jp{k}'*m{k}*I_Jp{k} +  I_Jr{k}'*I_I_s*I_Jr{k};
 end
+% TODO: implement here
+
 M = simplify(M);
 fprintf('done!\n');
 
@@ -53,9 +54,9 @@ fprintf('Computing gravity vector g... ');
 g = sym(zeros(6,1));
 
 for k = 1:num_bodies
-
-    % TODO: implement here
-
+    g = g - m{k} * I_Jp{k}' * I_g_acc;
+    
+    
 end
 g = simplify(g); % Allow more time for more simplified solution
 fprintf('done!\n');
@@ -64,12 +65,15 @@ fprintf('done!\n');
 fprintf('Computing coriolis and centrifugal vector b and simplifying... ');
 b = sym(zeros(6,1));
 for k = 1:num_bodies
-    
+    I_I_s = R_Ik{k} * k_I_s{k} * R_Ik{k}';
+    Omega = I_Jr{k} * dq;
+    b = b + I_Jp{k}'*m{k}*dAdt(I_Jp{k},q,dq)*dq + I_Jr{k}'*(I_I_s*dAdt(I_Jr{k},q,dq)*dq + cross(Omega,I_I_s*Omega));
     % TODO: implement here
-
 end
-
 b = simplify(b);
+
+
+
 fprintf('done!\n');
 
 %% Store the expressions
