@@ -5,7 +5,7 @@ function [ tau ] = control_pd_g( q_des, q, q_dot )
 % q --> a vector R^n of measured joint angles.
 % q_dot --> a vector in R^n of measured joint velocities
 
-% Gains
+% Gains 
 % Here the controller response is mainly inertia dependent
 % so the gains have to be tuned joint-wise
 kp = 10.0;
