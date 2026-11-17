@@ -1,20 +1,20 @@
 function [ tau ] = hybrid_force_motion_control(model, t, x)
-% Implements a hierarchical-QP-based controller which realizes a desired 
+% Implements a hierarchical-QP-based controller which realizes a desired
 % base and end-effector motion and interaction force with the wall.
-% 
+%
 % Outputs:
 %   tau   : [7x1] torques [tau_F, tau_H, tau_A]'
-% 
+%
 % Inputs:
 %   model : The Multi-body dynamics and kinematics model of the system.
 %   t     : Current time [s]
 %   x     : Current state of the system (position, velocity)
-% 
+%
 % Where:
 %	tau_F : [2x1] torques [hip, knee]' (front leg)
 %	tau_H : [2X1] torques [hip, knee]' (hind leg)
 %	tau_A : [3x1] torques [shoulder, elbow, wrist]' (arm)
-% 
+%
 
 %% System State
 
@@ -22,7 +22,7 @@ function [ tau ] = hybrid_force_motion_control(model, t, x)
 q = x(1:10);    % [10x1] Generalized coordinates [q_b, q_F, q_H, q_A]'
 dq = x(11:20);  % [10X1] Generalized velocities
 
-%% Model Parameters 
+%% Model Parameters
 
 % Extract dynamics at current state
 params = model.parameters.values;
@@ -73,26 +73,32 @@ f_star_EE = [-0.7, 0, 0]';
 % x_opt = [ddq', f_c_xz', tau', f_EE']
 
 % Equations of motions
-A_eom = [];
-b_eom = [];
+A_eom = [M, -J_c', -S', -J_EE'];
+b_eom = -b-g;
 
 % No foot-contact motions
-A_c = [];
-b_c = [];
+A_c = [J_c, zeros(4,4), zeros(4,7), zeros(4,3)];
+b_c = -dJ_c*dq;
 
 % Constant EE position in z direction
 % HINT: kp_ee = 5; kd_ee = 2*sqrt(kp_ee);
-A_pos_ee = [];
-b_pos_ee = [];
+kp_ee = 5;
+kd_ee = 2*sqrt(kp_ee);
+dw_star_EE = kp_ee*(p_star_EE_z - p_EE(2)) - kd_ee*w_EE(2);
+A_pos_ee = [J_EE(2,:), zeros(1, 4), zeros(1, 7), zeros(1,3)];
+b_pos_ee = dw_star_EE -dJ_EE(2,:)*dq;%dim=1
 
 % EE wrench
-A_force_ee = [];
-b_force_ee = [];
+A_force_ee = [zeros(3, 10), zeros(3, 4), zeros(3, 7), eye(3)];
+b_force_ee = f_star_EE;%dim=3
 
 % Body motion
 % HINT: kp_b = 2; kd_b = 2*sqrt(kp_b);
-A_b = [];
-b_b = [];
+kp_b = 2;
+kd_b = 2*sqrt(kp_b);
+dw_star_b = kp_b*(p_star_B - p_B) + kd_b*(w_star_B - w_B);
+A_b = [J_B, zeros(3,4), zeros(3,7), zeros(3,3)];
+b_b = dw_star_b - dJ_B*dq;
 
 %% Additional Tasks
 

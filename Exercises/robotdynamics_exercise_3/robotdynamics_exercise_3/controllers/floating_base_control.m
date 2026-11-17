@@ -1,20 +1,20 @@
 function [ tau ] = floating_base_control(model, t, x)
-% Implements a hierarchical-QP-based controller which realizes a desired 
+% Implements a hierarchical-QP-based controller which realizes a desired
 % base and end-effector motion.
-% 
+%
 % Outputs:
 %   tau   : [7x1] torques [tau_F, tau_H, tau_A]'
-% 
+%
 % Inputs:
 %   model : The Multi-body dynamics and kinematics model of the system.
 %   t     : Current time [s]
 %   x     : Current state of the system (position, velocity)
-% 
+%
 % Where:
 %	tau_F : [2x1] torques [hip, knee]' (front leg)
 %	tau_H : [2X1] torques [hip, knee]' (hind leg)
 %	tau_A : [3x1] torques [shoulder, elbow, wrist]' (arm)
-% 
+%
 
 %% System State
 
@@ -22,7 +22,7 @@ function [ tau ] = floating_base_control(model, t, x)
 q = x(1:10);    % [10x1] Generalized coordinates [q_b, q_F, q_H, q_A]'
 dq = x(11:20);  % [10X1] Generalized velocities
 
-%% Model Parameters 
+%% Model Parameters
 
 % Extract dynamics at current state
 params = model.parameters.values;
@@ -71,22 +71,28 @@ w_star_EE = zeros(3,1);
 % x_opt = [ddq', f_c_xz', tau']
 
 % Equations of motions
-A_eom = [];
-b_eom = [];
+A_eom = [M, -J_c', -S'];
+b_eom = -b-g;
 
 % No foot-contact motions
-A_c = [];
-b_c = [];
+A_c = [J_c, zeros(4,4), zeros(4,7)];
+b_c = -dJ_c * dq;
 
 % Body motion
 % HINT: kp_b = 10; kd_b = 2*sqrt(kp_b);
-A_b = [];
-b_b = [];
+kp_b = 10;
+kd_b = 2*sqrt(kp_b);
+dw_star = kp_b*(p_star_B - p_B) + kd_b*(w_star_B - w_B);
+A_b = [J_B, zeros(3,4), zeros(3,7)];
+b_b = dw_star - dJ_B*dq;
 
 % No end-effector motion
 % HINT: kp_ee = 5; kd_ee = 2*sqrt(kp_b);
-A_ee = [];
-b_ee = [];
+kp_ee = 5;
+kd_ee = 2*sqrt(kp_ee);
+w_star_EE = kp_ee*(p_star_EE - p_EE) + kd_ee*(w_star_EE - w_EE);
+A_ee = [J_EE, zeros(size(J_EE,1), 4), zeros(size(J_EE, 1), 7)];
+b_ee = w_star_EE - dJ_EE*dq;
 
 %% Additional Tasks
 
